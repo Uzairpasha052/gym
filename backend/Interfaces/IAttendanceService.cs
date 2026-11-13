@@ -1,4 +1,6 @@
 using backend.DTO.Attendance;
+using backend.DTOs.Pagination;
+using backend.Helper;
 // using System.Security.Claims;
 
 namespace backend.Interfaces;
@@ -7,13 +9,14 @@ public interface IAttendanceService
 {
 
     // Get all players with today's attendance (for marking attendance)
-    Task<List<TodayAttendanceDto>> GetTodayAttendanceAsync();
+    Task<PagedResult<TodayAttendanceDto>> GetTodayAttendanceAsync(PaginationRequest request);
 
     // Save today's attendance
     Task<AttendanceResponseDto> SaveAttendanceAsync(List<MarkAttendanceDto> dto);
 
     // Complete attendance history for a calendar month
-    Task<List<AdminAttendanceDto>> GetAttendanceHistoryAsync(int? year = null, int? month = null);
+    Task<PagedResult<AdminAttendanceDto>> GetAttendanceHistoryAsync(PaginationRequest request,
+        int? year = null, int? month = null);
 
     // Individual player history
     Task<List<AttendanceHistoryDto>> GetPlayerAttendanceHistoryAsync(int playerId);

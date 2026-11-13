@@ -3,3 +3,6 @@ export interface CashOutModel {
     description: string;
     paymentDate: string;
 }
+export interface CashOutListModel extends CashOutModel {
+    id: number;
+}

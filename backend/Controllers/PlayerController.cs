@@ -1,3 +1,4 @@
+using backend.DTOs.Pagination;
 using backend.DTOs.Player;
 using backend.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -18,9 +19,9 @@ public class PlayerController : ControllerBase
     }
  
     [HttpGet]
-    public async Task<IActionResult> GetAllPlayers()
+    public async Task<IActionResult> GetAllPlayers([FromQuery] PaginationRequest request)
     {
-        var players = await _playerService.GetAllPlayersAsync();
+        var players = await _playerService.GetAllPlayersAsync(request);
         return Ok(players);
     }
 

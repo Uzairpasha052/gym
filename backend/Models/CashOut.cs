@@ -10,5 +10,7 @@ public class CashOut
     public decimal Amount { get; set; }
 
     public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
+    public int? CreatedBy { get; set; }
+
 
 }

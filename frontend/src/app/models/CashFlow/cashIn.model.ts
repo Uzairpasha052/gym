@@ -4,3 +4,7 @@ export interface CashInModel {
     amount: number;
     paymentDate: string;
 }
+export interface CashInListModel extends CashInModel {
+    id: number;
+    playerName: string;
+}

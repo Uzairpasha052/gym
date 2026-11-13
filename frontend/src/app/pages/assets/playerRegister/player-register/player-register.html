@@ -22,10 +22,13 @@
     <p-table
         #dt
         [value]="users"
+        [lazy]="true"
         [paginator]="true"
         [rows]="8"
+        [totalRecords]="totalRecords"
+        (onLazyLoad)="onPage($event)"
         [rowsPerPageOptions]="[5, 8, 20, 30]"
-        [globalFilterFields]="['stdName', 'stdAge', 'stdBelt', 'stdGender', 'stdStatus']"
+        [globalFilterFields]="['name', 'fName', 'age', 'gender', 'status']"
         [tableStyle]="{'min-width':'60rem'}">
 
         <ng-template pTemplate="caption">
@@ -42,35 +45,35 @@
 
         <ng-template pTemplate="header">
             <tr>
-                <th pSortableColumn="stdName">
+                <th pSortableColumn="name">
                     Name
-                    <p-sortIcon field="stdName"></p-sortIcon>
+                    <p-sortIcon field="name"></p-sortIcon>
                 </th>
                 <th>
                  <!-- pSortableColumn="fName"> -->
                     Father Name
                     <!-- <p-sortIcon field="fName"></p-sortIcon> -->
                 </th>
-                <th pSortableColumn="stdBelt">
-                    Belt
-                    <p-sortIcon field="stdBelt"></p-sortIcon>
+                <th >
+                    Fee
+                    <!-- <p-sortIcon field="Fee"></p-sortIcon> -->
                 </th>
-                <th pSortableColumn="stdAge">
+                <th pSortableColumn="age">
                     Age
-                    <p-sortIcon field="stdAge"></p-sortIcon>
+                    <p-sortIcon field="age"></p-sortIcon>
                 </th>
-                <th pSortableColumn="stdGender">
+                <th pSortableColumn="gender">
                     Gender
-                    <p-sortIcon field="stdGender"></p-sortIcon>
+                    <p-sortIcon field="gender"></p-sortIcon>
                 </th>
                 <th> 
                     <!--pSortableColumn="contact"> -->
                     Contact
                     <!-- <p-sortIcon field="contact"></p-sortIcon> -->
                 </th>
-                <th pSortableColumn="stdStatus">
+                <th pSortableColumn="status">
                     Status
-                    <p-sortIcon field="stdStatus"></p-sortIcon>
+                    <p-sortIcon field="status"></p-sortIcon>
                 </th>
                 <th pSortableColumn="createdAt">
                     Created
@@ -84,13 +87,13 @@
 
         <ng-template pTemplate="body" let-user>
             <tr>
-                <td>{{ user.stdName }}</td>
-                <td>{{ user.stdFName }}</td>
-                <td>{{ user.stdBelt }}</td>
-                <td>{{ user.stdAge }}</td>
-                <td>{{ user.stdGender }}</td>
-                <td>{{ user.stdContact }}</td>
-                <td>{{ user.stdStatus }}</td>
+                <td>{{ user.name }}</td>
+                <td>{{ user.fName }}</td>
+                <td>{{ user.fee }}</td>
+                <td>{{ user.age }}</td>
+                <td>{{ user.gender }}</td>
+                <td>{{ user.contact }}</td>
+                <td>{{ user.status }}</td>
 
                 <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
                 <td>
@@ -100,7 +103,7 @@
                         <button pButton icon="pi pi-trash" severity="danger"
                                 (click)="confirmDelete(user)" [rounded]="true" [text]="true"></button>
                     </div>
-                </td>
+                </td> 
             </tr>
         </ng-template>
 
@@ -122,7 +125,7 @@
                         pInputText
                         id="stdName"
                         class="w-full"
-                        [(ngModel)]="selectedUser.stdName" />
+                        [(ngModel)]="selectedUser.name" />
                     <label for="stdName">Full Name</label>
                 </p-floatlabel>
             </div>
@@ -133,7 +136,7 @@
                         pInputText
                         id="stdFName"
                         class="w-full"
-                        [(ngModel)]="selectedUser.stdFName" />
+                        [(ngModel)]="selectedUser.fName" />
                     <label for="stdFName">Father Name</label>
                 </p-floatlabel>
             </div>
@@ -144,7 +147,7 @@
                         pInputText
                         id="stdAge"
                         class="w-full"
-                        [(ngModel)]="selectedUser.stdAge" />
+                        [(ngModel)]="selectedUser.age" />
                     <label for="stdAge">Age</label>
                 </p-floatlabel>
             </div>
@@ -155,7 +158,7 @@
                         pInputText
                         id="stdGender"
                         class="w-full"
-                        [(ngModel)]="selectedUser.stdGender" />
+                        [(ngModel)]="selectedUser.gender" />
                     <label for="stdGender">Gender</label>
                 </p-floatlabel>
             </div>
@@ -166,19 +169,8 @@
                         pInputText
                         id="stdContact"
                         class="w-full"
-                        [(ngModel)]="selectedUser.stdContact" />
+                        [(ngModel)]="selectedUser.contact" />
                     <label for="stdContact">Contact</label>
-                </p-floatlabel>
-            </div>
-
-            <div class="field">
-                <p-floatlabel variant="on">
-                    <input
-                        pInputText
-                        id="stdBelt"
-                        class="w-full"
-                        [(ngModel)]="selectedUser.stdBelt" />
-                    <label for="stdBelt">Belt</label>
                 </p-floatlabel>
             </div>
 
@@ -188,7 +180,7 @@
                         pInputText
                         id="stdHistory"
                         class="w-full"
-                        [(ngModel)]="selectedUser.stdHistory" />
+                        [(ngModel)]="selectedUser.history" />
                     <label for="stdHistory">History</label>
                 </p-floatlabel>
             </div>
@@ -199,7 +191,7 @@
                         pInputText
                         id="stdFee"
                         class="w-full"
-                        [(ngModel)]="selectedUser.stdFee" />
+                        [(ngModel)]="selectedUser.fee" />
                     <label for="stdFee">Fee</label>
                 </p-floatlabel>
             </div>
@@ -210,7 +202,7 @@
                         id="stdReason"
                         class="w-full reason-input"
                         rows="3"
-                        [(ngModel)]="selectedUser.stdReason"></textarea>
+                        [(ngModel)]="selectedUser.reason"></textarea>
                     <label for="stdReason">Reason</label>
                 </p-floatlabel>
             </div>
@@ -223,7 +215,7 @@
                         [options]="statuses"
                         optionLabel="label"
                         optionValue="value"
-                        [(ngModel)]="selectedUser.stdStatus"
+                        [(ngModel)]="selectedUser.status"
                         [appendTo]="'body'">
                     </p-select>
                     <label for="stdStatus">Status</label>

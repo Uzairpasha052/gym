@@ -22,7 +22,7 @@ public class PlayerRecordReportDocuments : IDocument
         return new DocumentMetadata
         {
           Title = "Player Record Report",
-          Author = "Taekwondo Club Management System",
+          Author = "GYM Management System",
           Subject = "Player Record"
         };
     }
@@ -62,7 +62,7 @@ public class PlayerRecordReportDocuments : IDocument
         {
             column.Item()
                 .AlignCenter()
-                .Text("ZULFI INTERNATIONAL TAEKWONDO ACADEMY")
+                .Text("ASTRIK GYM ACADEMY")
                 .FontSize(22)
                 .Bold();
 
@@ -127,7 +127,6 @@ public class PlayerRecordReportDocuments : IDocument
                 header.Cell().Element(HeaderCellStyle).Text("Age");
                 header.Cell().Element(HeaderCellStyle).Text("Gender");
                 header.Cell().Element(HeaderCellStyle).Text("Contact");
-                header.Cell().Element(HeaderCellStyle).Text("Belt");
                 header.Cell().Element(HeaderCellStyle).Text("History");
                 header.Cell().Element(HeaderCellStyle).Text("Fee");
                 header.Cell().Element(HeaderCellStyle).Text("Status");
@@ -138,15 +137,14 @@ public class PlayerRecordReportDocuments : IDocument
                 var player = _players[i];
 
                 table.Cell().Element(DataCellStyle).Text((i + 1).ToString());
-                table.Cell().Element(DataCellStyle).Text(player.stdName);
-                table.Cell().Element(DataCellStyle).Text(player.stdFName);
-                table.Cell().Element(DataCellStyle).Text(player.stdAge);
-                table.Cell().Element(DataCellStyle).Text(player.stdGender);
-                table.Cell().Element(DataCellStyle).Text(player.stdContact);
-                table.Cell().Element(DataCellStyle).Text(player.stdBelt);
-                table.Cell().Element(DataCellStyle).Text(player.stdHistory);
-                table.Cell().Element(DataCellStyle).Text(player.stdFee);
-                table.Cell().Element(DataCellStyle).Text(player.stdStatus);
+                table.Cell().Element(DataCellStyle).Text(player.Name);
+                table.Cell().Element(DataCellStyle).Text(player.FName);
+                table.Cell().Element(DataCellStyle).Text(player.Age);
+                table.Cell().Element(DataCellStyle).Text(player.Gender);
+                table.Cell().Element(DataCellStyle).Text(player.Contact);
+                table.Cell().Element(DataCellStyle).Text(player.History);
+                table.Cell().Element(DataCellStyle).Text(player.Fee);
+                table.Cell().Element(DataCellStyle).Text(player.Status);
             }
         });
     }
@@ -157,7 +155,7 @@ public class PlayerRecordReportDocuments : IDocument
             .Row(row =>
             {
                row.RelativeItem()
-                .Text("Taekwondo Club Management System")
+                .Text("GYM Management System")
                 .FontSize(10);
 
                 row.RelativeItem()

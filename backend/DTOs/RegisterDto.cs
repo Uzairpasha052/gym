@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace backend.DTOs;
 
 public class RegisterDto
@@ -8,6 +10,7 @@ public class RegisterDto
 
     public string Password { get; set; } = string.Empty;
 
-    public string Role { get; set; } = string.Empty;
+    [Range(1, int.MaxValue)]
+    public int RoleId { get; set; }
 
 }

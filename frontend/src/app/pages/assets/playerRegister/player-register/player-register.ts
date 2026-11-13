@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { PlayerService } from '../../../../services/playerService/player';
-import { PlayerModel } from '../../../../models/player/player.model';
+import { PlayerModel, UpdatePlayerRequest } from '../../../../models/player/player.model';
 // import { ConfirmationService } from 'primeng/api';
 
 import { DatePipe } from '@angular/common';
@@ -18,6 +18,7 @@ import { FormsModule } from '@angular/forms';
 import { DatePicker } from "primeng/datepicker";
 
 import { PlayerRegisterPopUp } from '../../player-register-pop-up/player-register-pop-up';
+import { TableLazyLoadEvent } from 'primeng/table';
 
 @Component({
   selector: 'app-player-register',
@@ -31,7 +32,7 @@ import { PlayerRegisterPopUp } from '../../player-register-pop-up/player-registe
     PlayerRegisterPopUp //For adding a player
     // DatePicker,
   ],
-  providers: [ConfirmationService],
+  providers: [ConfirmationService, MessageService],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
 
   templateUrl: './player-register.html',
@@ -49,6 +50,8 @@ export class PlayerRegister {
   }
 
   users: PlayerModel[] = [];
+  totalRecords = 0;
+  pageSize = 8;
 
   constructor(
     private getPlayer: PlayerService,
@@ -64,12 +67,14 @@ export class PlayerRegister {
 
   }
 
-  loadUsers(): void {
-    this.getPlayer.getPlayers().subscribe({
+  loadUsers(pageNumber = 1, pageSize = this.pageSize): void {
+    this.pageSize = pageSize;
+    this.getPlayer.getPlayers(pageNumber, pageSize).subscribe({
       next: (data) => {
-        this.users = data;
+        this.users = data.items;
+        this.totalRecords = data.totalCount;
         this.cdr.detectChanges();
-        // console.log("LoadPlayer",data);
+        console.log("LoadPlayer",data);
       },
       error: (error) => {
         this.messageService.add({
@@ -81,10 +86,15 @@ export class PlayerRegister {
     })
   }
 
+  onPage(event: TableLazyLoadEvent): void {
+    const pageSize = event.rows ?? this.pageSize;
+    this.loadUsers(Math.floor((event.first ?? 0) / pageSize) + 1, pageSize);
+  }
+
   confirmDelete(user: any){
     this.confirmationService.confirm({
       header: 'Delete User',
-      message: `Are you sure you want to delete: ${user.stdName}?`,
+      message: `Are you sure you want to delete: ${user.name}?`,
       icon: 'pi pi-exclamation-triangle',
 
       accept: () => {
@@ -106,18 +116,18 @@ export class PlayerRegister {
 
   displayEditDialog = false;
 
-  selectedUser: PlayerModel = {
+  selectedUser: PlayerModel =
+  {
     id: 0,
-    stdName: '',
-    stdFName: '',
-    stdAge: '',
-    stdGender: '',
-    stdContact: '',
-    stdBelt: '',
-    stdHistory: '',
-    stdReason: '',
-    stdFee: '',
-    stdStatus: '',
+    name: '',
+    fName: '',
+    age: '',
+    gender: '',
+    contact: '',
+    history: '',
+    reason: '',
+    fee: '',
+    status: '',
     createdAt: '',
   };
 
@@ -132,7 +142,19 @@ export class PlayerRegister {
   }
 
   saveUser() {
-    this.getPlayer.updatePlayer(this.selectedUser.id, this.selectedUser).subscribe({
+    const update: UpdatePlayerRequest = {
+      name: this.selectedUser.name,
+      fName: this.selectedUser.fName,
+      age: this.selectedUser.age,
+      gender: this.selectedUser.gender,
+      contact: this.selectedUser.contact,
+      history: this.selectedUser.history,
+      reason: this.selectedUser.reason,
+      fee: this.selectedUser.fee,
+      status: this.selectedUser.status,
+    };
+
+    this.getPlayer.updatePlayer(this.selectedUser.id, update).subscribe({
       next: () => {
         this.loadUsers();
         this.displayEditDialog = false;

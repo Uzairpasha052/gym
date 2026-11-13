@@ -1,154 +1,206 @@
-using Microsoft.EntityFrameworkCore;
-using backend.Data;
+using backend.DTOs.Pagination;
 using backend.DTOs.Player;
+using backend.Helper;
 using backend.Interfaces;
 using backend.Models;
+using backend.Repo_Interface;
+using System.Text.Json;
 
 namespace backend.Services;
 
 public class PlayerService : IPlayerService
 {
-    private readonly AppDbContext _context;
+    private readonly IPlayerRepository _repository;
+    private readonly CurrentUserService _currentUser;
+    private readonly IAuditLogService _logService;
 
-    public PlayerService(AppDbContext context)
+    public PlayerService(IPlayerRepository repository, CurrentUserService currentUser,
+        IAuditLogService logService)
     {
-        _context = context;
+        _repository = repository;
+        _currentUser = currentUser;
+        _logService = logService;
     }
 
-    public async Task<List<PlayerResponseDto>> GetAllPlayersAsync()
+    public async Task<PagedResult<PlayerResponseDto>> GetAllPlayersAsync(PaginationRequest request)
     {
-        return await _context.Players
-            .OrderBy(p => p.stdName)
-            .Select(p => new PlayerResponseDto
-            {
-                Id = p.Id,
-                stdName = p.stdName,
-                stdFName = p.stdFName,
-                stdAge = p.stdAge,
-                stdGender = p.stdGender,
-                stdContact = p.stdContact,
-                stdBelt = p.stdBelt,
-                stdHistory = p.stdHistory,
-                stdReason = p.stdReason,
-                stdFee = p.stdFee,
-                stdStatus = p.stdStatus,
-                CreatedAt = p.CreatedAt
-            })
-            .ToListAsync();
+        //await _repository.GetAllAsync().Select(MapToDto).ToList();
+        var players = await _repository.GetAllAsync(request);
+
+        return new PagedResult<PlayerResponseDto>
+        {
+            Items = players.Items.Select(MapToDto).ToList(),
+
+            TotalCount = players.TotalCount,
+            PageNumber = players.PageNumber,
+            PageSize = players.PageSize
+        };
     }
 
     public async Task<PlayerResponseDto?> GetPlayerByIdAsync(int id)
     {
-        var player = await _context.Players
-            .FirstOrDefaultAsync(p => p.Id == id);
-
-        if (player == null)
-            return null;
-
-        return new PlayerResponseDto
-        {
-            Id = player.Id,
-            stdName = player.stdName,
-            stdFName = player.stdFName,
-            stdAge = player.stdAge,
-            stdGender = player.stdGender,
-            stdContact = player.stdContact,
-            stdBelt = player.stdBelt,
-            stdHistory = player.stdHistory,
-            stdReason = player.stdReason,
-            stdFee = player.stdFee,
-            stdStatus = player.stdStatus,
-            CreatedAt = player.CreatedAt
-        };
+        var player = await _repository.GetByIdAsync(id);
+        return player is null ? null : MapToDto(player);
     }
 
     public async Task<PlayerResponseDto> CreatePlayerAsync(CreatePlayerDto dto)
     {
         var player = new Player
         {
-            stdName = dto.stdName,
-            stdFName = dto.stdFName,
-            stdAge = dto.stdAge,
-            stdGender = dto.stdGender,
-            stdContact = dto.stdContact,
-            stdBelt = dto.stdBelt,
-            stdHistory = dto.stdHistory,
-            stdReason = dto.stdReason,
-            stdFee = dto.stdFee,
-            stdStatus = "Active"
+            Name = dto.Name,
+            FName = dto.FName,
+            Age = dto.Age,
+            Gender = dto.Gender,
+            Contact = dto.Contact,
+            History = dto.History,
+            Reason = dto.Reason,
+            Fee = dto.Fee,
+            Status = "Active",
+            CreatedBy = _currentUser.UserId
         };
 
-        _context.Players.Add(player);
-        await _context.SaveChangesAsync();
+        var createdPlayer = await _repository.CreateAsync(player);
 
-        return new PlayerResponseDto
+        var newValues = JsonSerializer.Serialize(new
         {
-            Id = player.Id,
-            stdName = player.stdName,
-            stdFName = player.stdFName,
-            stdAge = player.stdAge,
-            stdGender = player.stdGender,
-            stdContact = player.stdContact,
-            stdBelt = player.stdBelt,
-            stdHistory = player.stdHistory,
-            stdReason = player.stdReason,
-            stdFee = player.stdFee,
-            stdStatus = player.stdStatus,
-            CreatedAt = player.CreatedAt
-        };
+            player.Name,
+            player.FName,
+            player.Age,
+            player.Gender,
+            player.Fee,
+            player.Status,
+            player.IsActive
+        });
+
+        await _logService.LogAsync(
+            _currentUser.UserId,
+            "Create",
+            "Player",
+            player.Id.ToString(),
+            null,
+            newValues
+        );
+
+        return MapToDto(createdPlayer);
     }
- 
+
     public async Task<PlayerResponseDto?> UpdatePlayerAsync(int id, UpdatePlayerDto dto)
     {
-        var player = await _context.Players.FindAsync(id);
+        var player = await _repository.GetByIdAsync(id);
+        if (player is null) return null;
 
-        if (player == null)
-            return null;
-
-        player.stdName = dto.stdName;
-        player.stdFName = dto.stdFName;
-        player.stdAge = dto.stdAge;
-        player.stdGender = dto.stdGender;
-        player.stdContact = dto.stdContact;
-        player.stdBelt = dto.stdBelt;
-        player.stdHistory = dto.stdHistory;
-        player.stdReason = dto.stdReason;
-        player.stdFee = dto.stdFee;
-        player.stdStatus = dto.stdStatus;
-
-        await _context.SaveChangesAsync();
-
-        return new PlayerResponseDto
+        var oldValues = JsonSerializer.Serialize(new
         {
-            Id = player.Id,
-            stdName = player.stdName,
-            stdFName = player.stdFName,
-            stdAge = player.stdAge,
-            stdGender = player.stdGender,
-            stdContact = player.stdContact,
-            stdBelt = player.stdBelt,
-            stdHistory = player.stdHistory,
-            stdReason = player.stdReason,
-            stdFee = player.stdFee,
-            stdStatus = player.stdStatus,
-            CreatedAt = player.CreatedAt
-        };
+            player.Name,
+            player.FName,
+            player.Age,
+            player.Gender,
+            player.Contact,
+            player.History,
+            player.Reason,
+            player.Fee,
+            player.IsActive
+        });
+
+        player.Name = dto.Name;
+        player.FName = dto.FName;
+        player.Age = dto.Age;
+        player.Gender = dto.Gender;
+        player.Contact = dto.Contact;
+        player.History = dto.History;
+        player.Reason = dto.Reason;
+        player.Fee = dto.Fee;
+        player.Status = dto.Status;
+        player.UpdatedAt = DateTime.UtcNow;
+        player.UpdatedBy = _currentUser.UserId;
+
+        var updated = await _repository.UpdateAsync(player);
+        if (!updated) return null;
+
+        var newValues = JsonSerializer.Serialize(new
+        {
+            player.Name,
+            player.FName,
+            player.Age,
+            player.Gender,
+            player.Contact,
+            player.History,
+            player.Reason,
+            player.Fee,
+            player.IsActive
+        });
+
+        await _logService.LogAsync(
+            _currentUser.UserId,
+            "Update",
+            "Player",
+            player.Id.ToString(),
+            oldValues,
+            newValues
+        );
+
+        return MapToDto(player);
     }
 
     public async Task<bool> DeletePlayerAsync(int id)
     {
-        var player = await _context.Players.FindAsync(id);
+        var player = await _repository.GetByIdAsync(id);
+        if (player is null) return false;
 
-        if (player == null)
-            return false;
+        var oldValues = JsonSerializer.Serialize(new
+        {
+            player.Name,
+            player.FName,
+            player.Age,
+            player.Gender,
+            player.Fee,
+            player.Status,
+            player.IsActive,
+        });
 
-        player.stdStatus = "InActive";
+        player.Status = "InActive";
+        player.IsActive = false;
+        player.UpdatedAt = DateTime.UtcNow;
+        player.UpdatedBy = _currentUser.UserId;
 
-        // _context.Players.Remove(player);
-        _context.Players.Update(player);
-        await _context.SaveChangesAsync();
+        var update = await _repository.UpdateAsync(player);
+        if (!update) return false;
 
-        return true;
+        var newValues = JsonSerializer.Serialize(new
+        {
+            player.Name,
+            player.FName,
+            player.Age,
+            player.Gender,
+            player.Fee,
+            player.Status,
+            player.IsActive,
+        });
 
+        await _logService.LogAsync(
+            _currentUser.UserId,
+            "Delete",
+            "Player",
+            player.Id.ToString(),
+            oldValues,
+            newValues
+        );
+
+        return update; 
     }
+
+    private static PlayerResponseDto MapToDto(Player player) => new()
+    {
+        Id = player.Id,
+        Name = player.Name,
+        FName = player.FName,
+        Age = player.Age,
+        Gender = player.Gender,
+        Contact = player.Contact,
+        History = player.History,
+        Reason = player.Reason,
+        Fee = player.Fee,
+        Status = player.Status,
+        CreatedAt = player.CreatedAt
+    };
 }

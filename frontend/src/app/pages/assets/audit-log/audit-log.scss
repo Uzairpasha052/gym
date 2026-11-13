@@ -1,0 +1,136 @@
+.audit-log-page {
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 10px;
+}
+
+.audit-log-header {
+  margin-bottom: 1rem;
+}
+
+.audit-log-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+ 
+.audit-log-header p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+}
+
+.dialog-heading h2 {
+  margin: 0.4rem 0 0;
+  color: #172033;
+  font-size: 1.35rem;
+}
+
+.event-badge {
+  display: inline-block;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.5rem;
+  background: #eef2ff;
+  color: #5b5ce2;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.event-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0.5rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid #dce3ee;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+
+  // scrollbar-width: none;
+}
+
+.summary-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.summary-field span {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.summary-field strong {
+  color: #1e293b;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
+
+.action-value {
+  color: #9a5800 !important;
+}
+
+.value-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.value-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dce3ee;
+  border-radius: 0.75rem;
+}
+
+.value-card h3 {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+}
+
+// .audit-details-dialog{
+//   scrollbar-width: none;
+// }
+.value-card pre {
+  min-height: 10rem;
+  max-height: 24rem;
+  margin: 0;
+  padding: 1rem;
+  overflow: auto;
+  color: #d7e8ff;
+  background: #101a2e;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 0.82rem/1.55 'Consolas', 'Courier New', monospace;
+}
+
+.old-values h3 {
+  color: #b42318;
+  background: #fff1f1;
+}
+
+.new-values h3 {
+  color: #15803d;
+  background: #effcf3;
+}
+
+.empty-message {
+  padding: 1.5rem;
+  text-align: center;
+  color: #64748b;
+}
+
+@media (max-width: 800px) {
+  .event-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .value-comparison {
+    grid-template-columns: 1fr;
+  }
+}

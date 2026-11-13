@@ -1,0 +1,230 @@
+<p-toast position="top-right"></p-toast>
+
+                    <!-- Chart Area -->
+                    <div class="chart-container">
+                        <div class="chart-input">
+                            <div class="employee-search">
+                                <h3>
+                                    Search Player Attendance
+                                </h3>
+                                <div class="email-input">
+                                    <input 
+                                        type="text"
+                                        placeholder="Enter Player Name"
+                                        [(ngModel)]="searchPlayerName"
+                                        (keyup.enter)="searchPlayer()"
+                                    />
+                                </div>
+
+                                <button (click)="searchPlayer()">Search</button>
+
+                                @if (selectedPlayer) {
+                                    <div class="employee-card">
+                                        <h4>{{selectedPlayer.name}}</h4>
+                                        <!-- <p style="color: black;">Belt: {{selectedPlayer.age}}</p> -->
+    
+                                        <div class="stats">
+                                            <div class="present">Present <strong>{{presentDays}}</strong></div>
+                                            <div class="absent">Absent <strong>{{absentDays}}</strong></div>
+                                            
+                                        </div>
+                                        <div class="totalAttendance">
+                                            <p>Total Record: <strong>{{ presentDays + absentDays }}</strong></p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            @if (searchPlayerName && !selectedPlayer) {
+                                <p class="not-found">Player not Found</p>
+                            }
+
+                        </div>
+
+                        <div class="chart-card">
+        
+                            <canvas
+                                baseChart
+                                [type]="pieChartType"
+                                [data]="pieChartData"
+                                [options]="pieChartOptions"
+                                /* [plugins]="pieChartPlugins" */
+                            >
+                            </canvas>
+        
+                        </div>
+                    </div>
+
+                    <!-- display Player Attendance -->
+                     <div class="user_TData">
+                        <div class="attendance-toolbar">
+                            <h2>Player Attendance List</h2>
+                            <div class="month-picker">
+                                <label>Month</label>
+                                <p-datePicker
+                                    [(ngModel)]="selectedMonth"
+                                    view="month"
+                                    dateFormat="MM yy"
+                                    [readonlyInput]="true"
+                                    [showIcon]="true"
+                                    appendTo="body"
+                                    (ngModelChange)="onMonthChange()">
+                                </p-datePicker>
+                            </div>
+                        </div>
+
+                        <p-table
+                            #dt
+                            [value]="attendanceList"
+                            [lazy]="true"
+                            [paginator]="true"
+                            [rows]="10"
+                            [totalRecords]="attendanceTotal"
+                            (onLazyLoad)="onPage($event)"
+                            [rowsPerPageOptions]="[10,20,30]"
+                            [globalFilterFields]="['playerName', 'status', 'remarks']"
+                            [tableStyle]="{'min-width':'60rem'}"
+                            [loading]="attendanceloading"
+                        >
+
+                            <ng-template pTemplate="caption">
+                                <p-iconfield>
+                                    <p-inputicon class="pi pi-search"></p-inputicon>
+
+                                    <input
+                                        pInputText
+                                        type="text"
+                                        placeholder="Search..."
+                                        (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
+                                </p-iconfield>
+                            </ng-template>
+
+                            <ng-template pTemplate="header">
+                                <tr>
+                                    <th pSortableColumn="playerName">
+                                        Player Name
+                                        <p-sortIcon field="playerName"></p-sortIcon>
+                                    </th>
+                                    <!-- <th pSortableColumn="playerBelt">
+                                        Belt
+                                        <p-sortIcon field="playerBelt"></p-sortIcon>
+                                    </th> -->
+                                    <th pSortableColumn="attendanceDate">
+                                        Date
+                                        <p-sortIcon field="attendanceDate"></p-sortIcon>
+                                    </th>
+                                    <th pSortableColumn="status">
+                                        Status
+                                        <p-sortIcon field="status"></p-sortIcon>
+                                    </th>
+                                    <th>Remarks</th>
+                                    <th>Edit</th>
+                                </tr>
+
+                            </ng-template>
+
+                            <ng-template pTemplate="body" let-att>
+                                <tr>
+                                    <td>{{att.playerName}}</td>
+                                    <!-- <td>{{att.playerBelt}}</td> -->
+                                    <td>{{att.attendanceDate | date: 'dd-MMM-yyyy'}}</td>
+                                    <td>{{att.status}}</td>
+                                    <td style="font-size: x-small; font-style: italic;">{{att.remarks}}</td>
+                                    <td>
+                                        <button
+                                            pButton
+                                            icon="pi pi-pencil"
+                                            severity="warn"
+                                            rounded="true"
+                                            [text]="true"
+                                            (click)="openAttEditDialog(att)"
+                                        >
+                                        </button>
+                                    </td>
+                                </tr>
+
+                            </ng-template>
+
+                        </p-table>
+
+                        <p-dialog
+                            header="Update Attendance"
+                            [(visible)]="displayAttEditDialog"
+                            [modal]="true"
+                            [resizable]="false"
+                            [draggable]="false"
+                            appendTo="body"
+                            [style]="{ width: '38rem' }"
+                            styleClass="attendance-dialog"
+                        >
+
+                            @if (selectedAttendance) {
+                                <div class="attendance-form">
+
+                                    <div class="dialog_row_container">
+                                        <div class="dialog_row">
+                                            <label>Player</label>
+                                            <span class="dialog_value">{{selectedAttendance.playerName}}</span>
+                                        </div>
+
+                                        <div class="dialog_row">
+                                            <label>Belt</label>
+                                            <span class="dialog_value">{{selectedAttendance.playerBelt}}</span>
+                                        </div>
+
+                                        <div class="dialog_row">
+                                            <label>Date</label>
+                                            <span class="dialog_value">{{selectedAttendance.attendanceDate | date: 'dd-MMM-yyyy'}}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="dialog_divider"></div>
+
+                                    <div class="dialog_field">
+                                        <label>Status</label>
+                                        <p-select
+                                            [options]="statusOptions"
+                                            [(ngModel)]="updateAttendance.status"
+                                            optionLabel="label"
+                                            optionValue="value"
+                                            placeholder="Select Status"
+                                            appendTo="body"
+                                            class="w-full">
+                                        </p-select>
+                                    </div>
+
+                                    <div class="dialog_field">
+                                        <label>Remarks</label>
+                                        <textarea
+                                            rows="4"
+                                            class="w-full remarks-input"
+                                            [(ngModel)]="updateAttendance.remarks">
+                                        </textarea>
+                                    </div>
+
+                                </div>
+                            }
+
+                            <ng-template pTemplate="footer">
+                                <div class="attendance-dialog-footer">
+                                    <button
+                                        pButton
+                                        type="button"
+                                        label="Cancel"
+                                        severity="secondary"
+                                        (click)="displayAttEditDialog=false">
+                                    </button>
+
+                                    <button
+                                        pButton
+                                        type="button"
+                                        label="Save"
+                                        icon="pi pi-check"
+                                        (click)="saveEditAttendance()">
+                                    </button>
+                                </div>
+                            </ng-template>
+
+                        </p-dialog> 
+
+                    </div>
+

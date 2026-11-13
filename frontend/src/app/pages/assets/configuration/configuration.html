@@ -1,0 +1,44 @@
+<p-toast position="top-right"></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<section class="configuration-page">
+  <header class="configuration-header">
+    <div>
+      <h2>Configuration</h2>
+      <p>Manage roles available to users in this gym.</p>
+    </div>
+    <button pButton type="button" label="Add Role" icon="pi pi-plus" (click)="openCreate()"></button>
+  </header>
+
+  <div class="role-table-card">
+    <h3>Roles</h3>
+    @if (loadError) { <p class="role-load-error" role="alert">{{ loadError }}</p> }
+    <p-table [value]="roles" [loading]="loading" [tableStyle]="{'min-width':'35rem'}">
+      <ng-template pTemplate="header">
+        <tr><th>Role Name</th><th>Created</th><th>Actions</th></tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-role>
+        <tr>
+          <td>{{ role.name }}</td>
+          <td>{{ role.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td class="role-actions">
+            <button pButton type="button" icon="pi pi-pencil" severity="info" [rounded]="true" [text]="true" aria-label="Edit role" (click)="openEdit(role)"></button>
+            <button pButton type="button" icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" aria-label="Delete role" (click)="confirmDelete(role)"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="3">No roles found.</td></tr></ng-template>
+    </p-table>
+  </div>
+</section>
+
+<p-dialog [header]="editingRole ? 'Edit Role' : 'Add Role'" [(visible)]="dialogVisible" [modal]="true" [resizable]="false" [style]="{width:'28rem'}">
+  <div class="role-form">
+    <label for="roleName">Role name</label>
+    <input pInputText id="roleName" [(ngModel)]="roleName" maxlength="100" (keyup.enter)="saveRole()" />
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="Cancel" severity="secondary" (click)="dialogVisible=false"></button>
+    <button pButton type="button" label="Save" icon="pi pi-check" (click)="saveRole()"></button>
+  </ng-template>
+</p-dialog>

@@ -1,10 +1,12 @@
+using backend.DTOs.Pagination;
 using backend.DTOs.Player;
+using backend.Helper;
 
 namespace backend.Interfaces;
 
 public interface IPlayerService
 {
-    Task<List<PlayerResponseDto>> GetAllPlayersAsync();
+    Task<PagedResult<PlayerResponseDto>> GetAllPlayersAsync(PaginationRequest request);
 
     Task<PlayerResponseDto?> GetPlayerByIdAsync(int id);
 

@@ -19,7 +19,7 @@ public class PlayerReasonReportDocument : IDocument
         return new DocumentMetadata
         {
             Title = "Player Reason Report",
-            Author = "Taekwondo Club Management System",
+            Author = "GYM Management System",
             Subject = "Player Reasons"
         };
     }
@@ -49,7 +49,7 @@ public class PlayerReasonReportDocument : IDocument
         {
             column.Item()
                 .AlignCenter()
-                .Text("ZULFI INTERNATIONAL TAEKWONDO ACADEMY")
+                .Text("ASTRIK GYM ACADEMY")
                 .FontSize(22)
                 .Bold();
 
@@ -135,23 +135,23 @@ public class PlayerReasonReportDocument : IDocument
 
                     table.Cell()
                         .Element(DataCellStyle)
-                        .Text(player.stdName);
+                        .Text(player.Name);
 
                     table.Cell()
                         .Element(DataCellStyle)
-                        .Text(player.stdFName);
+                        .Text(player.FName);
 
                     table.Cell()
                         .Element(DataCellStyle)
-                        .Text(player.stdAge);
+                        .Text(player.Age);
 
                     table.Cell()
                         .Element(DataCellStyle)
-                        .Text(player.stdGender);
+                        .Text(player.Gender);
 
                     table.Cell()
                         .Element(DataCellStyle)
-                        .Text(player.stdReason);
+                        .Text(player.Reason);
                 }
             });
     }
@@ -162,7 +162,7 @@ public class PlayerReasonReportDocument : IDocument
             .Row(row =>
             {
                row.RelativeItem()
-                .Text("Taekwondo Club Management System")
+                .Text("GYM Management System")
                 .FontSize(10);
 
                 row.RelativeItem()

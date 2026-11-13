@@ -26,7 +26,7 @@ public class CashInReportDocument : IDocument
             return new DocumentMetadata
             {
                 Title = "Cash In Report",
-                Author = "Taekwondo Club Management System",
+                Author = "GYM Management System",
                 Subject = "Cash In Report"
             };
         }
@@ -62,7 +62,7 @@ public class CashInReportDocument : IDocument
             {
                 column.Item()
                     .AlignCenter()
-                    .Text("ZULFI INTERNATIONAL TAEKWONDO ACADEMY")
+                    .Text("ASTRIK GYM ACADEMY")
                     .FontSize(22)
                     .Bold();
 
@@ -195,7 +195,7 @@ public class CashInReportDocument : IDocument
                 {
                     row.RelativeItem()
                         .Text(
-                            "Taekwondo Club Management System"
+                            "GYM Management System"
                         )
                         .FontSize(8);
 

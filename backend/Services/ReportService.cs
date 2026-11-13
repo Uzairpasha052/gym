@@ -1,194 +1,129 @@
-using Microsoft.EntityFrameworkCore;
-using backend.Data;
-using backend.DTOs.Reports;
-using backend.Services.Interfaces;
 using backend.DTO.Reports;
+using backend.DTOs.Reports;
+using backend.Interfaces;
+using backend.Repo_Interface;
+using backend.Services.Interfaces;
 
 namespace backend.Services;
 
 public class ReportService : IReportService
 {
-    private readonly AppDbContext _context;
+    private readonly IReportRepository _repository;
+    private readonly IAuditLogService _logService;
 
-    public ReportService(AppDbContext context)
+    public ReportService(IReportRepository repository, IAuditLogService logService)
     {
-        _context = context;
+        _repository = repository;
+        _logService = logService;
     }
 
     public async Task<List<PlayerRecordReportDto>> GetPlayerReportAsync(string status)
     {
-        var query = _context.Players
-            .AsNoTracking()
-            .AsQueryable();
+        var players = await _repository.GetPlayersAsync();
+        if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase))
+            players = players.Where(p => string.Equals(p.Status, "active", StringComparison.OrdinalIgnoreCase)).ToList();
+        else if (string.Equals(status, "inactive", StringComparison.OrdinalIgnoreCase))
+            players = players.Where(p => string.Equals(p.Status, "inactive", StringComparison.OrdinalIgnoreCase)).ToList();
 
-        // Apply status filter
-        if (!string.IsNullOrWhiteSpace(status))
+        return players.Select(p => new PlayerRecordReportDto
         {
-            if (status.Equals("active", StringComparison.OrdinalIgnoreCase))
-            {
-                query = query.Where(p => p.stdStatus.ToLower() == "active");
-            }
-            else if (status.Equals("inactive", StringComparison.OrdinalIgnoreCase))
-            {
-                query = query.Where(p => p.stdStatus.ToLower() == "inactive");
-            }
-        }
-
-        return await query
-            .Select(p => new PlayerRecordReportDto
-            {
-                Id = p.Id,
-                stdName = p.stdName,
-                stdFName = p.stdFName,
-                stdAge = p.stdAge,
-                stdGender = p.stdGender,
-                stdContact = p.stdContact,
-                stdBelt = p.stdBelt,
-                stdHistory = p.stdHistory,
-                stdFee = p.stdFee,
-                stdStatus = p.stdStatus,
-                CreatedAt = p.CreatedAt
-            })
-            .ToListAsync();
+            Id = p.Id,
+            Name = p.Name,
+            FName = p.FName,
+            Age = p.Age,
+            Gender = p.Gender,
+            Contact = p.Contact,
+            History = p.History,
+            Fee = p.Fee,
+            Status = p.Status,
+            CreatedAt = p.CreatedAt
+        }).ToList();
     }
 
     public async Task<List<PlayerReasonReportDto>> GetPlayerReasonReportAsync()
     {
-        return await _context.Players
-            .AsNoTracking()
-            .Where(p => !string.IsNullOrWhiteSpace(p.stdReason))
-            .Select(p => new PlayerReasonReportDto
-            {
-                Id = p.Id,
-                stdName = p.stdName,
-                stdFName = p.stdFName,
-                stdAge = p.stdAge,
-                stdGender = p.stdGender,
-                stdReason = p.stdReason
-            })
-            .ToListAsync();
+        var players = await _repository.GetPlayersAsync();
+        return players.Where(p => !string.IsNullOrWhiteSpace(p.Reason)).Select(p => new PlayerReasonReportDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            FName = p.FName,
+            Age = p.Age,
+            Gender = p.Gender,
+            Reason = p.Reason
+        }).ToList();
     }
 
     public async Task<List<AttendanceReportDto>> GetAttendanceReportAsync(DateOnly StartDate, DateOnly EndDate)
     {
-        return await _context.Attendances
-            .AsNoTracking()
-            .Where(a =>
-                a.AttendanceDate >= StartDate && a.AttendanceDate <= EndDate
-            )
-            .Select(a => new AttendanceReportDto
-            {
-                PlayerName = a.Player.stdName,
-                FatherName = a.Player.stdFName,
-                Belt = a.Player.stdBelt,
-                AttendanceDate = a.AttendanceDate,
-                Status = a.Status ?? string.Empty,
-                Remarks = a.Remarks ?? string.Empty
-            })
-            .OrderByDescending(a => a.AttendanceDate)
-            .ThenBy(a => a.PlayerName)
-            .ToListAsync();
+        var attendances = await _repository.GetAttendanceAsync(StartDate, EndDate);
+        return attendances.Select(a => new AttendanceReportDto
+        {
+            PlayerName = a.Player.Name,
+            FatherName = a.Player.FName,
+            AttendanceDate = a.AttendanceDate,
+            Status = a.Status ?? string.Empty,
+            Remarks = a.Remarks ?? string.Empty
+        }).ToList();
     }
 
     public async Task<List<CashInReportDto>> GetCashInReportAsync(DateOnly startDate, DateOnly endDate)
     {
-        var startDateTime = startDate.ToDateTime(TimeOnly.MinValue);
-        var endDateTime = endDate.ToDateTime(TimeOnly.MaxValue);
-
-        return await _context.CashIns
-            .AsNoTracking()
-            .Where(c =>
-                c.PaymentDate >= startDateTime &&
-                c.PaymentDate <= endDateTime)
-            .Select(c => new CashInReportDto
-            {
-                PlayerName = c.Player.stdName,
-                FatherName = c.Player.stdFName,
-                Amount = c.Amount,
-                PaymentDate = DateOnly.FromDateTime(c.PaymentDate)
-            })
-            .OrderByDescending(c => c.PaymentDate)
-            .ThenBy(c => c.PlayerName)
-            .ToListAsync();
+        var start = startDate.ToDateTime(TimeOnly.MinValue);
+        var end = endDate.ToDateTime(TimeOnly.MaxValue);
+        var cashIns = await _repository.GetCashInsAsync(start, end);
+        return cashIns.Select(c => new CashInReportDto
+        {
+            PlayerName = c.Player.Name,
+            FatherName = c.Player.FName,
+            Amount = c.Amount,
+            PaymentDate = DateOnly.FromDateTime(c.PaymentDate)
+        }).ToList();
     }
-
 
     public async Task<List<CashOutReportDto>> GetCashOutReportAsync(DateOnly startDate, DateOnly endDate)
     {
-
-        var startDateTime = startDate.ToDateTime(TimeOnly.MinValue);
-        var endDateTime = endDate.ToDateTime(TimeOnly.MaxValue);
-
-        return await _context.CashOuts
-            .AsNoTracking()
-            .Where(c =>
-                c.PaymentDate >= startDateTime &&
-                c.PaymentDate <= endDateTime)
-            .Select(c => new CashOutReportDto
-            {
-                Amount = c.Amount,
-                ExpenseDate = DateOnly.FromDateTime(c.PaymentDate),
-                Description = c.Description
-            })
-            .OrderByDescending(c => c.ExpenseDate)
-            .ToListAsync();
+        var cashOuts = await _repository.GetCashOutsAsync(
+            startDate.ToDateTime(TimeOnly.MinValue), endDate.ToDateTime(TimeOnly.MaxValue));
+        return cashOuts.Select(c => new CashOutReportDto
+        {
+            Amount = c.Amount,
+            ExpenseDate = DateOnly.FromDateTime(c.PaymentDate),
+            Description = c.Description
+        }).ToList();
     }
 
     public async Task<CashFlowReportDto> GetCashFlowReportAsync(DateOnly startDate, DateOnly endDate)
     {
+        var start = startDate.ToDateTime(TimeOnly.MinValue);
+        var end = endDate.ToDateTime(TimeOnly.MaxValue);
+        var cashIns = await _repository.GetCashInsAsync(start, end);
+        var cashOuts = await _repository.GetCashOutsAsync(start, end);
+        var cashInDtos = cashIns.Select(c => new CashFlowCashInDto
+        {
+            PlayerName = c.Player.Name,
+            FatherName = c.Player.FName,
+            Amount = c.Amount,
+            PaymentDate = DateOnly.FromDateTime(c.PaymentDate)
+        }).ToList();
+        var cashOutDtos = cashOuts.Select(c => new CashFlowCashOutDto
+        {
+            Amount = c.Amount,
+            Description = c.Description,
+            ExpenseDate = DateOnly.FromDateTime(c.PaymentDate)
+        }).ToList();
 
-        var startDateTime = startDate.ToDateTime(TimeOnly.MinValue);
-        var endDateTime = endDate.ToDateTime(TimeOnly.MaxValue);
-
-        var cashIns = await _context.CashIns
-            .AsNoTracking()
-            .Where(c =>
-                c.PaymentDate >= startDateTime &&
-                c.PaymentDate <= endDateTime)
-            .Select(c => new CashFlowCashInDto
-            {
-                PlayerName = c.Player.stdName,
-                FatherName = c.Player.stdFName,
-                Amount = c.Amount,
-                PaymentDate = DateOnly.FromDateTime(c.PaymentDate)
-            })
-            .OrderByDescending(c => c.PaymentDate)
-            .ToListAsync();
-
-
-        var cashOuts = await _context.CashOuts
-            .AsNoTracking()
-            .Where(c =>
-                c.PaymentDate >= startDateTime &&
-                c.PaymentDate <= endDateTime)
-            .Select(c => new CashFlowCashOutDto
-            {
-                Amount = c.Amount,
-                Description = c.Description,
-                ExpenseDate = DateOnly.FromDateTime(c.PaymentDate)
-            })
-            .OrderByDescending(c => c.ExpenseDate)
-            .ToListAsync();
-
-        var totalCashIn = cashIns.Sum(c => c.Amount);
-
-        var totalCashOut = cashOuts.Sum(c => c.Amount);
-
-        var profitAmount = totalCashIn - totalCashOut;
-
+        var totalCashIn = cashInDtos.Sum(c => c.Amount);
+        var totalCashOut = cashOutDtos.Sum(c => c.Amount);
         return new CashFlowReportDto
         {
             StartDate = startDate,
             EndDate = endDate,
-
-            CashIns = cashIns,
-            CashOuts = cashOuts,
-
+            CashIns = cashInDtos,
+            CashOuts = cashOutDtos,
             TotalCashIn = totalCashIn,
             TotalCashOut = totalCashOut,
-
-            ProfitAmount = profitAmount
+            ProfitAmount = totalCashIn - totalCashOut
         };
     }
-
 }

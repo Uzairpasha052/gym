@@ -1,70 +1,68 @@
-using Microsoft.EntityFrameworkCore;
-using backend.Data;
 using backend.DTO.Attendance;
+using backend.DTOs;
+using backend.DTOs.Pagination;
+using backend.Helper;
 using backend.Interfaces;
 using backend.Models;
+using backend.Repo_Interface;
+using System.Text.Json;
 
 namespace backend.Services;
 
 public class AttendanceService : IAttendanceService
 {
-    private readonly AppDbContext _context;
+    private readonly IAttendanceRepository _repository;
+    private readonly CurrentUserService _currentUser;
+    private readonly IAuditLogService _logService;
 
-    public AttendanceService(AppDbContext context)
-    {
-        _context = context;
+
+    public AttendanceService(IAttendanceRepository repository, CurrentUserService currentUser,
+        IAuditLogService logService)
+    { 
+        _repository = repository; 
+        _currentUser = currentUser;
+        _logService = logService;
     }
 
-    public async Task<List<TodayAttendanceDto>> GetTodayAttendanceAsync()
+    public async Task<PagedResult<TodayAttendanceDto>> GetTodayAttendanceAsync(PaginationRequest request)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
+        var players = await _repository.GetActivePlayersAsync(request);
+        var attendances = await _repository.GetByDateAsync(today);
 
-        var players = await _context.Players
-            .Where(p => p.stdStatus == "Active")
-            .ToListAsync();
-
-        var attendances = await _context.Attendances
-            .Where(a => a.AttendanceDate == today)
-            .ToListAsync();
-
-        var result = players.Select(player =>
+        return new PagedResult<TodayAttendanceDto>
         {
-            var attendance = attendances
-                .FirstOrDefault(a => a.PlayerId == player.Id);
-
-            return new TodayAttendanceDto
+            Items = players.Items.Select(p =>
             {
-                PlayerId = player.Id,
-                PlayerName = player.stdName,
-                AttendanceDate = today,
-                Status = attendance?.Status ?? "Absent"
-            };
-        }).ToList();
+                var attendance = attendances.FirstOrDefault(a => a.PlayerId == p.Id);
+                return new TodayAttendanceDto
+                {
+                    PlayerId = p.Id,
+                    PlayerName = p.Name,
+                    AttendanceDate = today,
+                    Status = attendance?.Status ?? "Absent"
+                };
+            }).ToList(),
 
-        return result;
+            TotalCount = players.TotalCount,
+            PageNumber = players.PageNumber,
+            PageSize = players.PageSize
+        };
+
+        //return 
     }
 
     public async Task<AttendanceResponseDto> SaveAttendanceAsync(List<MarkAttendanceDto> dto)
     {
-        if (dto == null || !dto.Any())
-        {
-            return new AttendanceResponseDto
-            {
-                Success = false,
-                Message = "No attendance data received."
-            };
-        }
+        if (dto is null || dto.Count == 0)
+            return new AttendanceResponseDto { Success = false, Message = "No attendance data received." };
 
         var today = DateOnly.FromDateTime(DateTime.Today);
-
+        var pendingLogs = new List<(Attendance Attendance, string Action, string? OldValues)>();
         foreach (var item in dto)
         {
-            var attendance = await _context.Attendances
-                .FirstOrDefaultAsync(a =>
-                    a.PlayerId == item.PlayerId &&
-                    a.AttendanceDate == today);
-
-            if (attendance == null)
+            var attendance = await _repository.GetByPlayerAndDateAsync(item.PlayerId, today);
+            if (attendance is null)
             {
                 attendance = new Attendance
                 {
@@ -72,304 +70,144 @@ public class AttendanceService : IAttendanceService
                     AttendanceDate = today,
                     Status = item.Status,
                     Remarks = item.Remarks,
-                    CreatedAT = DateTime.UtcNow
+                    CreatedAT = DateTime.UtcNow,
+                    CreatedBy = _currentUser.UserId
                 };
-
-                await _context.Attendances.AddAsync(attendance);
+                await _repository.AddAsync(attendance);
+                pendingLogs.Add((attendance, "Create", null));
             }
             else
             {
+                var oldValues = JsonSerializer.Serialize(new
+                {
+                    attendance.PlayerId,
+                    attendance.AttendanceDate,
+                    attendance.Status,
+                    attendance.Remarks
+                });
                 attendance.Status = item.Status;
                 attendance.Remarks = item.Remarks;
                 attendance.UpdatedAt = DateTime.UtcNow;
+                attendance.UpdatedBy = _currentUser.UserId;
+                pendingLogs.Add((attendance, "Update", oldValues));
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _repository.SaveChangesAsync();
 
-        return new AttendanceResponseDto
+        foreach (var pending in pendingLogs)
         {
-            Success = true,
-            Message = "Attendance saved successfully."
-        };
+            var attendance = pending.Attendance;
+            var newValues = JsonSerializer.Serialize(new
+            {
+                attendance.PlayerId,
+                attendance.AttendanceDate,
+                attendance.Status,
+                attendance.Remarks
+            });
+
+            await _logService.LogAsync(
+                _currentUser.UserId,
+                pending.Action,
+                "Attendance",
+                attendance.Id.ToString(),
+                pending.OldValues,
+                newValues
+            );
+        }
+
+        return new AttendanceResponseDto { Success = true, Message = "Attendance saved successfully." };
     }
 
-    public async Task<List<AdminAttendanceDto>> GetAttendanceHistoryAsync(int? year = null, int? month = null)
+    public async Task<PagedResult<AdminAttendanceDto>> GetAttendanceHistoryAsync(PaginationRequest request,
+        int? year = null, int? month = null)
     {
-        var targetYear = year ?? DateTime.Today.Year;
-        var targetMonth = month ?? DateTime.Today.Month;
+        var start = new DateOnly(year ?? DateTime.Today.Year, month ?? DateTime.Today.Month, 1);
+        var attendances = await _repository.GetHistoryAsync(request, start, start.AddMonths(1));
 
-        var start = new DateOnly(targetYear, targetMonth, 1);
-        var end = start.AddMonths(1);
-
-        return await _context.Attendances
-            .Include(a => a.Player)
-            .Where(a => a.AttendanceDate >= start && a.AttendanceDate < end)
-            .OrderByDescending(a => a.AttendanceDate)
-            .Select(a => new AdminAttendanceDto
+        return new PagedResult<AdminAttendanceDto>
+        {
+            Items = attendances.Items.Select(a => new AdminAttendanceDto
             {
                 AttendanceId = a.Id,
                 PlayerId = a.PlayerId,
-                PlayerName = a.Player.stdName,
-                PlayerBelt = a.Player.stdBelt,
-                AttendanceDate = a.AttendanceDate,
-                Status = a.Status ?? "",
+                PlayerName = a.Player.Name,
+                // CreatedAT is stored in UTC. Returning the timestamp (instead of
+                // the date-only column) lets clients display the time it was marked.
+                AttendanceDate = a.CreatedAT,
+                Status = a.Status ?? string.Empty,
                 Remarks = a.Remarks
-            })
-            .ToListAsync();
+            }).ToList(),
+
+            TotalCount = attendances.TotalCount,
+            PageNumber = attendances.PageNumber,
+            PageSize = attendances.PageSize
+
+        };
+ 
     }
 
     public async Task<List<AttendanceHistoryDto>> GetPlayerAttendanceHistoryAsync(int playerId)
     {
-        //I think I don't need this, bcz it's just for chart, and I can set chart through loadAttendance
-        return await _context.Attendances
-            .Where(a => a.PlayerId == playerId)
-            .OrderByDescending(a => a.AttendanceDate)
-            .Select(a => new AttendanceHistoryDto
-            {
-                AttendanceDate = a.AttendanceDate,
-                Status = a.Status
-            })
-            .ToListAsync();
+        var attendances = await _repository.GetPlayerHistoryAsync(playerId);
+        return attendances.Select(a => new AttendanceHistoryDto
+        {
+            AttendanceDate = a.AttendanceDate,
+            Status = a.Status
+        }).ToList();
     }
 
-
-
-      public async Task<AttendanceResponseDto> UpdateAttendanceAsync(int attendanceId, UpdateAttendanceDto dto)
+    public async Task<AttendanceResponseDto> UpdateAttendanceAsync(int attendanceId, UpdateAttendanceDto dto)
     {
-        var attendance = await _context.Attendances
-            .FirstOrDefaultAsync(a => a.Id == attendanceId);
-
-        if (attendance == null)
-        {
-            return new AttendanceResponseDto
-            {
-                Success = false,
-                Message = "Attendance record not found."
+        var attendance = await _repository.GetByIdAsync(attendanceId);
+        if (attendance is null)
+            return new AttendanceResponseDto 
+            { 
+                Success = false, 
+                Message = "Attendance record not found." 
             };
-        }
 
-        if (!string.IsNullOrWhiteSpace(dto.Status))
-            attendance.Status = dto.Status;
+        var oldValues = JsonSerializer.Serialize(new
+        {
+            //attendance.Id,
+            attendance.PlayerId,
+            attendance.AttendanceDate,
+            attendance.Status,
+            attendance.Remarks
+        });
 
-        if (dto.Remarks != null)
-            attendance.Remarks = dto.Remarks;
+
+        if (!string.IsNullOrWhiteSpace(dto.Status)) attendance.Status = dto.Status;
+        if (dto.Remarks is not null) attendance.Remarks = dto.Remarks;
 
         attendance.UpdatedAt = DateTime.UtcNow;
+        attendance.UpdatedBy = _currentUser.UserId;
 
-        await _context.SaveChangesAsync();
+        var newValues = JsonSerializer.Serialize(new
+        {
+            //attendance.Id,
+            attendance.PlayerId,
+            attendance.AttendanceDate,
+            attendance.Status,
+            attendance.Remarks
+        });
 
+        await _logService.LogAsync(
+            _currentUser.UserId,
+            "Update",
+            "Attendance",
+            attendance.Id.ToString(),
+            oldValues,
+            newValues
+        );
+
+        await _repository.SaveChangesAsync();
         return new AttendanceResponseDto
         {
             Success = true,
             Message = "Attendance updated successfully.",
             AttendanceId = attendance.Id,
-            Status = attendance.Status ?? ""
+            Status = attendance.Status ?? string.Empty
         };
     }
-
-    // public async Task<AttendanceResponseDto> CheckInAsync(ClaimsPrincipal user)
-    // {
-    //     // Console.WriteLine($"Authenticated: {user.Identity?.IsAuthenticated}");
-    //     // Console.WriteLine($"Claims Count: {user.Claims.Count()}");
-    //     // foreach (var claim in user.Claims)
-    //     // {
-    //     //     Console.WriteLine($"{claim.Type} = {claim.Value}");
-    //     // }    
-
-    //     var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
-
-    //     if (userIdClaim == null)
-    //     {
-    //         return new AttendanceResponseDto
-    //         {
-    //             success = false,
-    //             message = "User Information Not Found."
-    //         };
-    //     }
-
-    //     var userId = int.Parse(userIdClaim);
-
-    //     // Check if attendance already exists today
-    //     var today = DateOnly.FromDateTime(DateTime.Now);
-
-    //     var existingAttendance = await _context.Attendances
-    //         .FirstOrDefaultAsync(a =>
-    //             a.UserId == userId &&
-    //             a.AttendanceDate == today);
-
-    //     if (existingAttendance != null)
-    //         {
-    //             return new AttendanceResponseDto
-    //             {
-    //                 success = false,
-    //                 message = "You have already checked in today."
-    //             };
-    //         }
-        
-    //       // Create new attendance record
-    //     var attendance = new Attendance
-    //     {
-    //         UserId = userId,
-    //         AttendanceDate = DateOnly.FromDateTime(DateTime.Now),
-    //         CheckInTime = DateTime.Now,
-    //         Status = "Absent",
-    //         CreatedAT = DateTime.Now
-    //     };
-
-    //     await _context.Attendances.AddAsync(attendance);
-
-    //     await _context.SaveChangesAsync();
-
-    //     return new AttendanceResponseDto
-    //     {
-    //         success = true,
-    //         message = "Checked in successfully.",
-    //         CheckInTime = attendance.CheckInTime,
-    //         CheckOutTime = attendance.CheckOutTime,
-    //         Status = attendance.Status
-    //     };
-
-    // }
-
-    //  public async Task<AttendanceResponseDto> CheckOutAsync(ClaimsPrincipal user)
-    // {
-    //     var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
-
-    //     if(userIdClaim == null)
-    //     {
-    //         return new AttendanceResponseDto
-    //         {
-    //             success = false,
-    //             message = "User Information Not Found.",
-    //         };
-    //     }
-
-    //     var userId = int.Parse(userIdClaim);
-
-    //     var today = DateOnly.FromDateTime(DateTime.Now);
-
-    //     var existingAttendance = await _context.Attendances
-    //         .FirstOrDefaultAsync(a =>
-    //             a.UserId == userId &&
-    //             a.AttendanceDate == today);
-        
-    //     if(existingAttendance == null)
-    //     {
-    //         return new AttendanceResponseDto
-    //         {
-    //             success = false,
-    //             message = "You haven't checked in today."                
-    //         };
-    //     }
-
-    //     if(existingAttendance.CheckOutTime != null)
-    //     {
-    //         return new AttendanceResponseDto
-    //         {
-    //             success = false,
-    //             message = "You have already checked out today."
-    //         };
-    //     }
-
-    //     existingAttendance.CheckOutTime = DateTime.Now;
-    //     existingAttendance.UpdatedAt = DateTime.Now;
-    //     existingAttendance.Status = "Present";
-
-    //     await _context.SaveChangesAsync();
-
-    //     return new AttendanceResponseDto
-    //     {
-    //         success = true,
-    //         message = "Checked out successfully.",
-    //         CheckInTime = existingAttendance.CheckInTime,
-    //         CheckOutTime = existingAttendance.CheckOutTime,
-    //         Status = existingAttendance.Status
-    //     };
-
-    // }
-
-    // public async Task<List<AttendanceHistoryDto>> GetMyAttendanceAsync(ClaimsPrincipal user)
-    // {
-    //     var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
-
-    //     if(userIdClaim == null)
-    //     {
-    //         return new List<AttendanceHistoryDto>();
-    //     }
-
-    //     var userId = int.Parse(userIdClaim);
-
-    //     // for filter the attendance
-    //     var today = DateOnly.FromDateTime(DateTime.Today);
-    //     var firstDayofMonth = new DateOnly(today.Year, today.Month, 1);
-    //     var firstDayofNextMonth = firstDayofMonth.AddMonths(1);
-
-    //     return await _context.Attendances
-    //                 .Where(a => a.PlayerId == userId
-    //                         && a.AttendanceDate >= firstDayofMonth
-    //                         && a.AttendanceDate < firstDayofNextMonth)
-    //                 .OrderByDescending(a => a.AttendanceDate)
-    //                 .Select(a => new AttendanceHistoryDto
-    //                 {
-    //                     AttendanceDate = a.AttendanceDate,
-    //                     // CheckInTime = a.CheckInTime,
-    //                     // CheckOutTime = a.CheckOutTime,
-    //                     Status = a.Status
-    //                 }).ToListAsync();
-    // }
-
-    // public async Task<List<AdminAttendanceDto>> GetAllAttendanceAsync()
-    // {
-    //     // throw new NotImplementedException();
-    //     return await _context.Attendances
-    //                 .Include(a => a.User)
-    //                 .OrderByDescending(a => a.AttendanceDate)
-    //                 .Select(a => new AdminAttendanceDto
-    //                 {
-    //                     AttendanceId = a.Id,
-    //                     EmployeeName = a.User.FullName,
-    //                     Email = a.User.Email,
-    //                     AttendanceDate = a.AttendanceDate,
-    //                     CheckInTime = a.CheckInTime,
-    //                     CheckOutTime = a.CheckOutTime,
-    //                     Status = a.Status,
-    //                     Remarks = a.Remarks
-    //                 }).ToListAsync();
-    // }
-
-
-    // public async Task<TodayAttendanceDto?> GetTodayAttendanceAsync(ClaimsPrincipal user)
-    // {
-    //     var userIdClaim = user.FindFirstValue(ClaimTypes.NameIdentifier);
-
-    //     if (userIdClaim == null)
-    //         return null;
-
-    //     var userId = int.Parse(userIdClaim);
-
-    //     var today = DateOnly.FromDateTime(DateTime.Now);
-
-    //     var attendance = await _context.Attendances
-    //         .FirstOrDefaultAsync(a =>
-    //             a.PlayerId == userId &&
-    //             a.AttendanceDate == today);
-
-    //     if (attendance == null)
-    //         return null;
-
-    //     return new TodayAttendanceDto
-    //     {
-    //         AttendanceDate = attendance.AttendanceDate,
-    //         // CheckInTime = attendance.CheckInTime,
-    //         // CheckOutTime = attendance.CheckOutTime,
-    //         Status = attendance.Status,
-    //         // IsCheckedIn = attendance.CheckInTime != null,
-    //         // IsCheckedOut = attendance.CheckOutTime != null
-    //     };
-    // }
-
-
-  
-
 }

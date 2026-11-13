@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { UserModel } from '../../models/user.model';
 import { UserUpdateModel } from '../../models/UserUpdate.model';
+import { PagedResult } from '../../models/paged-result.model';
 
 import { HttpHeaders } from '@angular/common/http';
 
@@ -19,10 +20,10 @@ export class UserService {
         private http: HttpClient
     ){}
 
-    getUsers(): Observable<UserModel[]>{
-        return this.http.get<UserModel[]>(
+    getUsers(pageNumber = 1, pageSize = 5): Observable<PagedResult<UserModel>>{
+        return this.http.get<PagedResult<UserModel>>(
             `${this.apiUrl}/users/allUsers`,
-            //  {headers}
+            { params: { pageNumber, pageSize } }
         )
     }
 

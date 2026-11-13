@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using backend.Interfaces;
-using Microsoft.AspNetCore.Identity.Data;
+//using Microsoft.AspNetCore.Identity.Data;
 using backend.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using backend.DTOs.Pagination;
 
 namespace backend.Controllers;
 
@@ -18,51 +19,12 @@ public class UserController : ControllerBase
         _userService = userService;        
     }
 
-    //Register
-    [HttpPost("register")]
-    // [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Register([FromBody] RegisterDto request)
-    {
-        var created = await _userService.Register(request);
-
-        if (!created)
-        {
-            return BadRequest(new
-            {
-                message = "User already exist"
-            });
-        }
-
-        return Ok(new
-        {
-            success = true,
-            message = "User Registered."
-        });
-    }
-
-    //Login
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto request)
-    {
-        var user = await _userService.ValidateLogin(request);
-
-        if (user == null)
-        {
-            return Unauthorized(new 
-            {
-                message = "Invalid Email or Password"
-            });
-        }
-
-        return Ok(user);
-    }
-
     //get Users 
     [Authorize]
     [HttpGet("allUsers")]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers([FromQuery] PaginationRequest request)
     {
-        var users = await _userService.GetAllUsersAsync();
+        var users = await _userService.GetAllUsersAsync(request);
 
         return Ok(users);
     }

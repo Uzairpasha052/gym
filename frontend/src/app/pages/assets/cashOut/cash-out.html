@@ -1,0 +1,177 @@
+                    <div class="cash-in-page">
+
+                        <!-- Page Header -->
+                        <div class="page-header">
+                            <div>
+                                <h1>Cash Out</h1>
+                                <p>Club Expense payments Record</p>
+                            </div>
+                        </div>
+
+                        <!-- Cash Out Form -->
+                        <div class="cash-in-card">
+
+                            <div class="card-header">
+                                <div>
+                                    <h2>Add Cash Out</h2>
+                                    <p>Enter the expense details below.</p>
+                                </div>
+                            </div>
+
+                            <form [formGroup]="form" (ngSubmit)="save()">
+
+                                <div class="form-grid-out">
+
+                                    <div class="form-group">
+                                        <label for="cashOutAmount">
+                                            Amount <span>*</span>
+                                        </label>
+
+                                        <p-inputNumber
+                                            inputId="cashOutAmount"
+                                            formControlName="amount"
+                                            mode="decimal"
+                                            [min]="0"
+                                            [useGrouping]="false"
+                                            placeholder="Enter amount"
+                                            class="w-full">
+                                        </p-inputNumber>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="cashOutDate">
+                                            Payment Date <span>*</span>
+                                        </label>
+
+                                        <p-datepicker
+                                            inputId="cashOutDate"
+                                            formControlName="date"
+                                            dateFormat="dd/mm/yy"
+                                            [showIcon]="true"
+                                            appendTo="body"
+                                            placeholder="Select date"
+                                            class="w-full">
+                                        </p-datepicker>
+                                    </div>
+
+                                    
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="description">
+                                        Description <span>*</span>
+                                    </label>
+
+                                    <textarea
+                                        style="padding: .5rem; border-color: rgb(205, 205, 182); border-radius: 5px;"
+                                        pTextarea
+                                        id="description"
+                                        formControlName="description"
+                                        placeholder="Enter description"
+                                        class="w-full"
+                                        rows="3" 
+                                    ></textarea>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button
+                                        pButton
+                                        type="submit"
+                                        label="Save Cash Out"
+                                        icon="pi pi-check"
+                                        [loading]="saving"
+                                        [disabled]="form.invalid || saving">
+                                    </button>
+                                </div>
+
+                            </form>
+                        </div>
+
+                        <!-- Cash Out History -->
+                        <div class="cash-in-card history-card">
+
+                            <div class="card-header history-header">
+                                <div>
+                                    <h2>Cash Out History</h2>
+                                    <p>View club expenses for the selected month.</p>
+                                </div>
+                                <div class="month-picker">
+                                    <label>Month</label>
+                                    <p-datePicker
+                                        [(ngModel)]="selectedMonth"
+                                        view="month"
+                                        dateFormat="MM yy"
+                                        [readonlyInput]="true"
+                                        [showIcon]="true"
+                                        appendTo="body"
+                                        (ngModelChange)="onMonthChange()">
+                                    </p-datePicker>
+                                </div>
+                            </div>
+
+                            <p-table
+                                [value]="records"
+                                [lazy]="true"
+                                [paginator]="true"
+                                [rows]="10"
+                                [totalRecords]="totalRecords"
+                                (onLazyLoad)="onPage($event)"
+                                [rowsPerPageOptions]="[10, 20, 30]"
+                                [sortField]="'paymentDate'"
+                                [sortOrder]="-1"
+                                responsiveLayout="scroll"
+                                styleClass="cash-in-table">
+
+                                <ng-template pTemplate="header">
+                                    <tr>
+                                        <th pSortableColumn="description">
+                                            Description
+                                            <p-sortIcon field="description"></p-sortIcon>
+                                        </th>
+
+                                        <th pSortableColumn="amount">
+                                            Amount
+                                            <p-sortIcon field="amount"></p-sortIcon>
+                                        </th>
+
+                                        <th pSortableColumn="paymentDate">
+                                            Payment Date
+                                            <p-sortIcon field="paymentDate"></p-sortIcon>
+                                        </th>
+                                    </tr>
+                                </ng-template>
+
+                                <ng-template pTemplate="body" let-cashOut>
+                                    <tr>
+                                        <td class="description-cell">
+                                            <span class="description">
+                                                {{ cashOut.description }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <span class="amount">
+                                                {{ cashOut.amount | number:'1.0-2' }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            {{ cashOut.paymentDate | date:'dd/MM/yyyy' }}
+                                        </td>
+                                    </tr>
+                                </ng-template>
+
+                                <ng-template pTemplate="emptymessage">
+                                    <tr>
+                                        <td colspan="3" class="empty-message">
+                                            No cash out records found.
+                                        </td>
+                                    </tr>
+                                </ng-template>
+
+                            </p-table>
+
+                        </div>
+
+                    </div>
+

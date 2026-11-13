@@ -2,6 +2,7 @@ using backend.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using backend.DTO.Attendance;
+using backend.DTOs.Pagination;
 
 namespace backend.Controllers;
 
@@ -19,9 +20,9 @@ public class AttendanceController : ControllerBase
 
     // Load today's attendance page
     [HttpGet("today")]
-    public async Task<IActionResult> GetTodayAttendance()
+    public async Task<IActionResult> GetTodayAttendance([FromQuery] PaginationRequest request)
     {
-        var result = await _attendanceService.GetTodayAttendanceAsync();
+        var result = await _attendanceService.GetTodayAttendanceAsync(request);
 
         return Ok(result);
     }
@@ -43,9 +44,10 @@ public class AttendanceController : ControllerBase
     [HttpGet("history")]
     public async Task<IActionResult> GetAttendanceHistory(
         [FromQuery] int? year,
-        [FromQuery] int? month)
+        [FromQuery] int? month,
+        [FromQuery] PaginationRequest request)
     {
-        var result = await _attendanceService.GetAttendanceHistoryAsync(year, month);
+        var result = await _attendanceService.GetAttendanceHistoryAsync(request, year, month);
 
         return Ok(result);
     }

@@ -1,139 +1,154 @@
-
-using backend.Data;
 using backend.DTOs;
-using backend.Models;
+using backend.DTOs.Pagination;
+using backend.Helper;
 using backend.Interfaces;
-using Microsoft.EntityFrameworkCore;
+using backend.Models;
+using backend.Repo_Interface;
 using Microsoft.AspNetCore.Identity;
-using System.Runtime.CompilerServices;
-using Microsoft.Identity.Client;
+using System.Text.Json;
 
 namespace backend.Services;
 
 public class UserService : IUserService
 {
-    // public async Task<User> Create(CreateUserDto dto)
-    // {
-        
-    private readonly AppDbContext _context;
-
-    private readonly PasswordHasher<User> _passwordHasher;
-
+    private readonly IUserRepository _repository;
     private readonly IJwtService _jwtService;
+    private readonly CurrentUserService _currentUser;
+    private readonly PasswordHasher<User> _passwordHasher = new();
+    private readonly IAuditLogService _logService;
 
-    public UserService(AppDbContext context, IJwtService jwtService)
+    public UserService(IUserRepository repository, IJwtService jwtService, 
+        CurrentUserService currentUser, IAuditLogService logService)
     {
-        _context = context;
+        _repository = repository;
         _jwtService = jwtService;
-        _passwordHasher = new PasswordHasher<User>();
+        _currentUser = currentUser;
+        _logService = logService;
     }
 
-    //Register
-    public async Task<bool> Register(RegisterDto request)
+    public async Task<PagedResult<UserDto>> GetAllUsersAsync(PaginationRequest request)
     {
-        var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-
-        if(existingUser != null)
+        var users = await _repository.GetAllAsync(request);
+        //return users.Select(MapToDto).ToList();
+        return new PagedResult<UserDto>
         {
-            return false;
-        } 
+            //Items = users.Items.Select(u => new UserDto
+            //{
+            //    Id = u.Id,
+            //    FullName = u.FullName,
+            //    Email = u.Email,
+            //    RoleId = u.RoleId,
+            //    RoleName = u.Role?.Name ?? string.Empty,
+            //    CreatedAt = u.CreatedAt
+            //}).ToList(),
+            Items = users.Items.Select(MapToDto).ToList(),
 
-        var user = new User
-        {
-            FullName = request.FullName,
-            Email = request.Email,
-            Role = request.Role,
-        };
-
-        user.Password = _passwordHasher.HashPassword(user, request.Password);
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        return true;
-    
-    }
-
-
-    //Login
-    public async Task<LoginResponseDto> ValidateLogin(LoginDto request)
-    {
-        var user = await _context.Users.FirstOrDefaultAsync(u =>
-            u.Email == request.Email 
-        );
-
-        if(user == null)
-           return null!; // Learn about it
-        
-        var result = 
-            _passwordHasher.VerifyHashedPassword(
-                user,
-                user.Password,
-                request.Password
-            );
-        
-        if(result == PasswordVerificationResult.Failed)
-        {
-            return null!; // Learn about it
-        }
-
-        return new LoginResponseDto
-        {
-            Id = user.Id,
-            FullName = user.FullName,
-            Email = user.Email,
-            Role = user.Role,
-
-            // Token = "fake-jwt-token", 
-            Token = _jwtService.GenerateToken(user, request.RememberMe), 
+            TotalCount = users.TotalCount,
+            PageNumber = users.PageNumber,
+            PageSize = users.PageSize,
         };
     }
 
-
-    //get Users
-    public async Task<List<UserDto>> GetAllUsersAsync()
-    {
-        return await _context.Users
-            .Select(user => new UserDto
-            {
-                Id = user.Id,
-                FullName = user.FullName,
-                Email = user.Email,
-                Role = user.Role,
-                CreatedAt = user.CreatedAt
-            }).ToListAsync();
-    }
-
-
-    //delete User
     public async Task<bool> DeleteUser(int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        if(id == _currentUser.UserId)
+        {
+            throw new InvalidOperationException(
+                "You cannot delete your own account.");
+        }
 
-        if(user == null)
-            return false;
+        var user = await _repository.GetByIdAsync(id);
+        if (user == null) { return false; }
 
-        _context.Users.Remove(user);
-        await _context.SaveChangesAsync();
+        var oldValues = JsonSerializer.Serialize(new
+        {
+            user.FullName,
+            user.Email,
+            user.RoleId,
+            user.IsActive
+        });
 
-        return true;
+        user.IsActive = false;
+        user.IsDeleted = true;
+        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedBy = _currentUser.UserId;
+
+        var result = await _repository.UpdateAsync(user);
+        if (!result) return false;
+
+        var newValues = JsonSerializer.Serialize(new
+        {
+            user.FullName,
+            user.Email,
+            user.RoleId,
+            user.IsActive
+        });
+
+        await _logService.LogAsync(
+            _currentUser.UserId,
+            "Delete",
+            "User",
+            user.Id.ToString(),
+            oldValues,
+            newValues
+        );
+        
+        return result;
+        //return user is not null && await _repository.DeleteAsync(user);
     }
 
-
-    // update User
-    public async Task<User?> UpdateUser(int id, UpdateUserDto dto)
+    public async Task<UserDto?> UpdateUser(int id, UpdateUserDto dto)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _repository.GetByIdAsync(id);
+        if (user is null) return null;
 
-        if(user == null)
-            return null;
-        
+        var role = await _repository.GetRoleByIdAsync(dto.RoleId);
+        if (role is null) return null;
+
+        var oldValues = JsonSerializer.Serialize(new
+        {
+            user.FullName,
+            user.Email,
+            user.RoleId,
+            user.Role.Name
+        });
+
         user.FullName = dto.FullName;
         user.Email = dto.Email;
-        user.Role = dto.Role;
+        user.RoleId = dto.RoleId;
+        user.Role = role;
 
-        await _context.SaveChangesAsync();
-        return user;
+        if (!await _repository.UpdateAsync(user)) return null;
+        var result = MapToDto(user);
+
+        var newValues = JsonSerializer.Serialize(new
+        {
+            result.FullName,
+            result.Email,
+            result.RoleId,
+            result.RoleName
+        });
+
+        await _logService.LogAsync(
+            _currentUser.UserId,
+            "Update",
+            "User",
+            user.Id.ToString(),
+            oldValues,
+            newValues
+        );
+
+        return result;
+        //return await _repository.UpdateAsync(user) ? MapToDto(user) : null;
     }
 
+    private static UserDto MapToDto(User user) => new()
+    {
+        Id = user.Id,
+        FullName = user.FullName,
+        Email = user.Email,
+        RoleId = user.RoleId,
+        RoleName = user.Role?.Name ?? string.Empty,
+        CreatedAt = user.CreatedAt
+    };
 }

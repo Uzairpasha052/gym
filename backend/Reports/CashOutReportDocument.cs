@@ -25,7 +25,7 @@ public class CashOutReportDocument : IDocument
             return new DocumentMetadata
             {
                 Title = "Cash Out Report",
-                Author = "Taekwondo Club Management System",
+                Author = "GYM Management System",
                 Subject = "Cash Out Report"
             };
         }
@@ -60,7 +60,7 @@ public class CashOutReportDocument : IDocument
             {
                 column.Item()
                     .AlignCenter()
-                    .Text("ZULFI INTERNATIONAL TAEKWONDO ACADEMY")
+                    .Text("ASTRIK GYM ACADEMY")
                     .FontSize(22)
                     .Bold();
 
@@ -187,7 +187,7 @@ public class CashOutReportDocument : IDocument
                 {
                     row.RelativeItem()
                         .Text(
-                            "Taekwondo Club Management System"
+                            "GYM Management System"
                         )
                         .FontSize(8);
 

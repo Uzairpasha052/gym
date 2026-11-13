@@ -23,7 +23,8 @@ public class JwtService : IJwtService
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Name, user.FullName),
-            new Claim(ClaimTypes.Role, user.Role),
+            new Claim("RoleId", user.RoleId.ToString()),
+            new Claim(ClaimTypes.Role, user.Role.Name),
         };
 
         var key = new SymmetricSecurityKey(
@@ -39,7 +40,7 @@ public class JwtService : IJwtService
             ? DateTime.UtcNow.AddDays(30)
             : DateTime.UtcNow.AddHours(1);
 
-        Console.WriteLine($"JWT Expiry: {expiry}");
+        //Console.WriteLine($"JWT Expiry: {expiry}");
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],

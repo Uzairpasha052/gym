@@ -10,6 +10,8 @@ public class CashIn
     public decimal Amount { get; set; }
 
     public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
+    public int? CreatedBy { get; set; }
+
 
     // Navigation Property
     public Player Player { get; set; } = null!;

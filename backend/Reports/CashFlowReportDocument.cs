@@ -19,7 +19,7 @@ public class CashFlowReportDocument : IDocument
         return new DocumentMetadata
         {
             Title = "Cash Flow Report",
-            Author = "Taekwondo Club Management System",
+            Author = "GYM Management System",
             Subject = "Cash Flow Report"
         };
     }
@@ -51,7 +51,7 @@ public class CashFlowReportDocument : IDocument
         {
             column.Item()
                 .AlignCenter()
-                .Text("ZULFI INTERNATIONAL TAEKWONDO ACADEMY")
+                .Text("ASTRIK GYM ACADEMY")
                 .FontSize(22)
                 .Bold();
 
@@ -606,7 +606,7 @@ public class CashFlowReportDocument : IDocument
             {
                 row.RelativeItem()
                     .Text(
-                        "Taekwondo Club Management System"
+                        "GYM Management System"
                     )
                     .FontSize(8);
 

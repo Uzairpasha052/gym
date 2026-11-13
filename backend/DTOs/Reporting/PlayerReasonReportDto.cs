@@ -4,13 +4,13 @@ public class PlayerReasonReportDto
 {
     public int Id { get; set; }
 
-    public string stdName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
-    public string stdFName { get; set; } = string.Empty;
+    public string FName { get; set; } = string.Empty;
 
-    public string stdAge { get; set; } = string.Empty;
+    public string Age { get; set; } = string.Empty;
 
-    public string stdGender { get; set; } = string.Empty;
+    public string Gender { get; set; } = string.Empty;
 
-    public string stdReason { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
 }

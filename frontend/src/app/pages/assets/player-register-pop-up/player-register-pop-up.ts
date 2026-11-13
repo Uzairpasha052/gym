@@ -4,7 +4,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import Swal from 'sweetalert2';
 
 import { PlayerService } from '../../../services/playerService/player';
-import { PlayerModel } from '../../../models/player/player.model';
+import { CreatePlayerRequest } from '../../../models/player/player.model';
 
 @Component({
   selector: 'app-player-register-pop-up',
@@ -16,19 +16,15 @@ export class PlayerRegisterPopUp {
 
   close = output<void>();
   
-  user: PlayerModel ={
-    id: 0,
-    stdName: '',
-    stdFName: '',
-    stdAge: '',
-    stdGender: '',
-    stdContact: '',
-    stdBelt: '',
-    stdHistory: '',
-    stdReason: '',
-    stdFee: '',
-    stdStatus: 'Active',
-    createdAt: '',
+  player: CreatePlayerRequest = {
+    name: '',
+    fName: '',
+    age: '',
+    gender: '',
+    contact: '',
+    history: '',
+    reason: '',
+    fee: '',
   }
 
   constructor(
@@ -52,11 +48,8 @@ export class PlayerRegisterPopUp {
         return; 
     }
 
-    this.auth.createPlayer(this.user).subscribe({
+    this.auth.createPlayer(this.player).subscribe({
       next: (response) => {
-            // console.log('User',this.user);
-            // console.log('User Registered', response);
-
             Swal.fire({
               icon: 'success',
               title: 'Player Added!',

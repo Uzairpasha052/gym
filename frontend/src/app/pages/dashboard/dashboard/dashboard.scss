@@ -24,7 +24,7 @@
     // height: 100%;
     inset: 0;
 
-    background-image: url("../../../../../public/images/dashboard.jpg") ;//center/cover no-repeat;
+    background-image: url("../../../../../public/images/gym_pic-3.jfif") ;//center/cover no-repeat;
     background-size: cover;
     background-position: center;
     // background-repeat: no-repeat;
@@ -34,18 +34,18 @@
 .dash_overlay{
     position: absolute;
     inset:0;
-    background:rgba(74, 74, 74, 0.65);
+    background:rgba(49, 48, 48, 0.65);
 }
 
 .dash_header{
     position: relative;
     z-index: 2;
     // background: rgb(241, 240, 240);
-    background: linear-gradient(to right , white, rgb(241, 240, 240), rgb(215, 213, 213));
+    background: linear-gradient(to right , white, rgb(250, 247, 247), rgb(215, 213, 213));
     display: flex;
     align-items: center;
     height: 70px;
-    padding: 0 20px;
+    padding: 0 10px;
     justify-content: space-between;
 }
 

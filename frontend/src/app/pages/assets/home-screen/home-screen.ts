@@ -51,9 +51,9 @@ export class HomeScreen {
 
     const startedAt = Date.now();
 
-    this.attendanceService.getTodayAttendance().subscribe({
+    this.attendanceService.getTodayAttendance(1, 100).subscribe({
       next: (response) => {
-        this.attendanceList = response.map(player => ({
+        this.attendanceList = response.items.map(player => ({
           ...player,
           status: player.status === 'Present'
             ? 'Present'
@@ -78,7 +78,7 @@ export class HomeScreen {
   }
 
   private hideLoaderAfterDelay(startedAt: number): void {
-    const remaining = Math.max(0, 5000 - (Date.now() - startedAt));
+    const remaining = Math.max(0, 3000 - (Date.now() - startedAt));
 
     setTimeout(() => {
       this.loading = false;

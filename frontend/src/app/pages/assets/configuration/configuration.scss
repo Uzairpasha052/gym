@@ -1,0 +1,11 @@
+ .configuration-page { padding: 1.5rem; }
+.configuration-header { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1.25rem; }
+.configuration-header h2, .role-table-card h3 { margin:0; }
+.configuration-header p { margin:.4rem 0 0; color:#667085; }
+.role-table-card { background:#fff; border-radius:12px; padding:1.25rem; box-shadow:0 2px 12px #172b4d12; }
+.role-table-card h3 { margin-bottom:1rem; }
+.role-actions { white-space:nowrap; }
+.role-load-error { color:#b42318; background:#fef3f2; border-radius:6px; padding:.75rem; }
+.role-form { display:flex; flex-direction:column; gap:.5rem; }
+.role-form input { width:100%; }
+@media (max-width:600px) { .configuration-page { padding:1rem .5rem; } .configuration-header { align-items:flex-start; flex-direction:column; } }

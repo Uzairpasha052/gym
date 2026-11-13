@@ -1,5 +1,7 @@
 using backend.DTO.CashIn;
 using backend.DTO.CashOut;
+using backend.DTOs.Pagination;
+using backend.Helper;
 
 namespace backend.Interfaces;
 
@@ -7,10 +9,12 @@ public interface ICashService
 {
     Task<bool> CashInAsync(CashInDto dto);
 
-    Task<List<CashInListDto>> GetAllCashInAsync(int? year = null, int? month = null);
+    Task<PagedResult<CashInListDto>> GetAllCashInAsync(PaginationRequest request, 
+        int? year = null, int? month = null);
 
     Task<bool> CashOutAsync(CashOutDto dto);
 
-    Task<List<CashOutDto>> GetAllCashOutAsync(int? year = null, int? month = null);
+    Task<PagedResult<CashOutDto>> GetAllCashOutAsync(PaginationRequest request, 
+        int? year = null, int? month = null);
 
 }

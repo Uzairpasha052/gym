@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using backend.DTO.CashIn;
 using backend.DTO.CashOut;
+using backend.DTOs.Pagination;
 
 namespace backend.Controllers;
 
@@ -42,9 +43,10 @@ public class CashFlowController : ControllerBase
     [HttpGet("cashin")]
     public async Task<IActionResult> GetAllCashIn(
         [FromQuery] int? year,
-        [FromQuery] int? month)
+        [FromQuery] int? month,
+        [FromQuery] PaginationRequest request)
     {
-        var result = await _cashService.GetAllCashInAsync(year, month);
+        var result = await _cashService.GetAllCashInAsync(request, year, month);
         return Ok(result);
     }
 
@@ -69,12 +71,13 @@ public class CashFlowController : ControllerBase
         });
     }
 
-     [HttpGet("cashout")]
+    [HttpGet("cashout")]
     public async Task<IActionResult> GetAllCashOut(
         [FromQuery] int? year,
-        [FromQuery] int? month)
+        [FromQuery] int? month,
+        [FromQuery] PaginationRequest request)
     {
-        var result = await _cashService.GetAllCashOutAsync(year, month);
+        var result = await _cashService.GetAllCashOutAsync(request, year, month);
         return Ok(result);
     }
 

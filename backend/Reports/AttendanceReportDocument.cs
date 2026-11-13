@@ -26,7 +26,7 @@ public class AttendanceReportDocument : IDocument
         return new DocumentMetadata
         {
             Title = "Attendance Report",
-            Author = "Taekwondo Club Management System",
+            Author = "GYM Management System",
             Subject = "Player Attendance Report"
         };
     }
@@ -59,7 +59,7 @@ public class AttendanceReportDocument : IDocument
         {
             column.Item()
                 .AlignCenter()
-                .Text("ZULFI INTERNATIONAL TAEKWONDO ACADEMY")
+                .Text("ASTRIK GYM ACADEMY")
                 .FontSize(22)
                 .Bold();
 
@@ -131,9 +131,9 @@ public class AttendanceReportDocument : IDocument
                         .Element(HeaderCellStyle)
                         .Text("Father Name");
 
-                    header.Cell()
-                        .Element(HeaderCellStyle)
-                        .Text("Belt");
+                    //header.Cell()
+                    //    .Element(HeaderCellStyle)
+                    //    .Text("Belt");
 
                     header.Cell()
                         .Element(HeaderCellStyle)
@@ -164,10 +164,10 @@ public class AttendanceReportDocument : IDocument
                         .Element(DataCellStyle)
                         .Text(record.FatherName);
 
-                    table.Cell()
-                        .Element(DataCellStyle)
-                        .AlignCenter()
-                        .Text(record.Belt);
+                    //table.Cell()
+                    //    .Element(DataCellStyle)
+                    //    .AlignCenter()
+                    //    .Text(record.Belt);
 
                     table.Cell()
                         .Element(DataCellStyle)
@@ -193,7 +193,7 @@ public class AttendanceReportDocument : IDocument
             .Row(row =>
             {
                 row.RelativeItem()
-                    .Text("Taekwondo Club Management System")
+                    .Text("GYM Management System")
                     .FontSize(8);
 
                 row.RelativeItem()

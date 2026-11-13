@@ -8,9 +8,10 @@ public class AdminAttendanceDto
     
     public string PlayerName { get; set; } = string.Empty;
 
-    public string PlayerBelt { get; set; } = string.Empty;
+    //public string PlayerBelt { get; set; } = string.Empty;
 
-    public DateOnly AttendanceDate { get; set; }
+    // Timestamp when this attendance record was first saved.
+    public DateTime AttendanceDate { get; set; }
 
     public string? Remarks { get; set; } = string.Empty;
 

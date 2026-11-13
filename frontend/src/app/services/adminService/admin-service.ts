@@ -1,32 +1,47 @@
-import { Injectable, Service } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { jwtDecode } from 'jwt-decode';
 
 // @Service()
 @Injectable({
     providedIn: 'root'
 })
 export class AdminService {
-    // getRole(): string |null {
-    //     const token = localStorage.getItem('user');
-    //     if (!token) return null;
 
-    //     const payload = JSON.parse(atob(token.split('.')[1]));
-    //     return payload.role;
-    // }
+    getToken(): string | null{
+        const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
 
-    // isAdmin(): boolean {
-    //     return this.getRole() === 'Admin';
-    // }
+        if (!storedUser) return null;
+
+        try {
+            return JSON.parse(storedUser)?.token ?? null;
+        } catch {
+            return null;
+        }
+    }
 
     getUser() {
-        const user = localStorage.getItem('user') || sessionStorage.getItem('user');
+        const token = this.getToken();
 
-        if (!user) return null;
+        if (!token) return null;
 
-            return JSON.parse(user);
+        try{
+            return jwtDecode<Record<string, unknown>>(token);
+        }catch{
+            return null
+        }
+
+    }
+
+    getRole(): string | null {
+        const user = this.getUser();
+        const roleClaim = user?.['role']
+            ?? user?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        const role = Array.isArray(roleClaim) ? roleClaim[0] : roleClaim;
+
+        return typeof role === 'string' ? role : null;
     }
 
     isAdmin(): boolean {
-        return this.getUser()?.role === 'Admin' 
-        // || this.getUser()?.role === 'Hr';
+        return this.getRole() === 'Admin';
     }
 }

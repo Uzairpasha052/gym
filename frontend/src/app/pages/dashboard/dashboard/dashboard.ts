@@ -51,11 +51,12 @@ export class Dashboard {
     event.preventDefault();
     event.stopPropagation();
 
-    const url = this.router.serializeUrl(
-      this.router.createUrlTree(['/adminScreen'])
-    )
+    this.router.navigate(['/adminScreen'])
+    // const url = this.router.serializeUrl(
+    //   this.router.createUrlTree(['/adminScreen'])
+    // )
 
-    window.open(window.location.origin + url, '_blank');
+    // window.open(window.location.origin + url, '_blank');
   }
 
   openCashScreen(event: MouseEvent){
@@ -75,6 +76,6 @@ export class Dashboard {
     const storedData = localStorage.getItem('user') || sessionStorage.getItem('user')
     const userData = storedData ? JSON.parse(storedData) : {};
     this.userName = userData.fullName || 'Guest';
-    this.userRole = userData.role || 'noRole';
+    this.userRole = userData.role || this.adminservice.getRole() || 'noRole';
   }
 }

@@ -14,8 +14,11 @@ public class Attendance
     public string? Remarks { get; set; }
 
     public DateTime CreatedAT { get; set; } = DateTime.UtcNow;
+    public int? CreatedBy { get; set; }
+
 
     public DateTime? UpdatedAt { get; set; }
+    public int? UpdatedBy { get; set; }
 
     // Navigation Property
     public Player Player { get; set; } = null!;

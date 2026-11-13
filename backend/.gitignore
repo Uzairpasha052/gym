@@ -4,3 +4,10 @@ obj/
 appsettings.Development.json
 
 Migrations/ 
+
+# Visual Studio
+.vs/
+*.csproj.user
+
+# Secrets and local configuration
+appsettings.Development.json

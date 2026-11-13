@@ -1,10 +1,12 @@
-import { Component, EventEmitter, output } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import Swal from 'sweetalert2';
 
 import { Auth } from '../../../../services/authService/auth';
 import { registerModel } from '../../../../models/register.model';
+import { RoleModel } from '../../../../models/role.model';
+import { RoleService } from '../../../../services/role-service/role.service';
 
 @Component({
   selector: 'app-register-popup',
@@ -12,7 +14,7 @@ import { registerModel } from '../../../../models/register.model';
   templateUrl: './register-popup.html',
   styleUrl: './register-popup.scss',
 })
-export class RegisterPopup {
+export class RegisterPopup implements OnInit {
 
   // @output() closee = new EventEmitter<void>();
 
@@ -22,18 +24,40 @@ export class RegisterPopup {
     fullName: '',
     email: '',
     password: '',
-    role: '',
+    roleId: null,
   }
+  roles: RoleModel[] = [];
+  rolesLoading = true;
+  rolesError = '';
 
   constructor(
-    private auth: Auth
+    private auth: Auth,
+    private roleService: RoleService,
+    private cdr: ChangeDetectorRef
     
   ){}
+
+  ngOnInit(): void {
+    this.roleService.getRoles().subscribe({
+      next: roles => {
+        this.roles = roles;
+        this.rolesLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: error => {
+        this.rolesError = error.status === 404
+          ? 'The roles API was not found. Restart the backend so it loads the roles endpoint.'
+          : `Unable to load roles (HTTP ${error.status}). Check the backend connection and your admin login.`;
+        this.rolesLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   register(form: NgForm){
 
     // Stop here if required fields are empty 
-    if (form.invalid) {
+    if (form.invalid || this.user.roleId === null || this.rolesLoading || this.roles.length === 0) {
       form.control.markAllAsTouched(); 
       
       Swal.fire({

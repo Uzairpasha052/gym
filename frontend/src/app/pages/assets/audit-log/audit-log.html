@@ -1,0 +1,95 @@
+<p-toast position="top-right"></p-toast>
+
+<section class="audit-log-page">
+  <header class="audit-log-header">
+    <div>
+      <h1>Audit Logs</h1>
+      <p>Review administrative and account activity.</p>
+    </div>
+  </header>
+
+  <p-table
+    [value]="logs"
+    [lazy]="true"
+    [paginator]="true"
+    [rows]="10"
+    [totalRecords]="totalRecords"
+    [rowsPerPageOptions]="[10, 20, 50]"
+    [loading]="loading"
+    (onLazyLoad)="onPage($event)"
+    [tableStyle]="{ 'min-width': '55rem' }"
+    styleClass="audit-log-table">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Time</th>
+        <th>User</th>
+        <th>Action</th>
+        <th>Entity</th>
+        <th>Record ID</th>
+        <th>Details</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-log>
+      <tr>
+        <td>{{ log.timestamp | date:'medium' }}</td>
+        <td>{{ log.userName || (log.userId ? 'User #' + log.userId : 'System') }}</td>
+        <td>{{ log.action }}</td>
+        <td>{{ log.entityName }}</td>
+        <td>{{ log.entityId || '—' }}</td>
+        <td>
+          <button pButton type="button" label="View details" icon="pi pi-eye" [outlined]="true" (click)="showDetails(log)"></button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr><td colspan="6" class="empty-message">No audit records found.</td></tr>
+    </ng-template>
+  </p-table>
+</section>
+
+<p-dialog
+  [(visible)]="detailsVisible"
+  [modal]="true"
+  [dismissableMask]="true"
+  [draggable]="false"
+  [resizable]="false"
+  appendTo="body"
+  [style]="{ width: '75rem', 'max-width': '94vw' }"
+  styleClass="audit-details-dialog">
+  <ng-template pTemplate="header">
+    <div class="dialog-heading">
+      <span class="event-badge">Audit Event</span>
+      <h2>Audit Log: {{ selectedLog?.id }} Details</h2>
+    </div>
+  </ng-template>
+
+  @if (selectedLog; as log) {
+    <div class="event-summary">
+      <div class="summary-field">
+        <span>Action</span>
+        <strong class="action-value" [attr.data-action]="log.action.toLowerCase()">{{ log.action }}</strong>
+      </div>
+      <div class="summary-field"><span>Target entity</span><strong>{{ log.entityName }}</strong></div>
+      <div class="summary-field"><span>Record ID</span><strong>{{ log.entityId || '—' }}</strong></div>
+      <div class="summary-field"><span>Performed by</span><strong>{{ log.userName || (log.userId ? 'User #' + log.userId : 'System') }}</strong></div>
+      <div class="summary-field"><span>Timestamp</span><strong>{{ log.timestamp | date:'MMM d, y, h:mm:ss a' }}</strong></div>
+    </div>
+
+    <div class="value-comparison">
+      <section class="value-card old-values">
+        <h3>Old Values</h3>
+        <pre>{{ formatValues(log.oldValues) }}</pre>
+      </section>
+      <section class="value-card new-values">
+        <h3>New Values</h3>
+        <pre>{{ formatValues(log.newValues) }}</pre>
+      </section>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="Close" severity="secondary" [outlined]="true" (click)="detailsVisible = false"></button>
+  </ng-template>
+</p-dialog>

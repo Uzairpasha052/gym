@@ -11,7 +11,7 @@
             <input 
                 type="text"
                 placeholder="Full Name"
-                [(ngModel)]="user.stdName"
+                [(ngModel)]="player.name"
                 name="fullName"
                 required
             />
@@ -19,8 +19,8 @@
             <input 
                 type="text"
                 placeholder="Father Name"
-                [(ngModel)]="user.stdFName"
-                name="email"
+                [(ngModel)]="player.fName"
+                name="fatherName"
                 required
             />
         
@@ -31,16 +31,16 @@
             <input 
                 type="text"
                 placeholder="Age"
-                [(ngModel)]="user.stdAge"
-                name="password"
+                [(ngModel)]="player.age"
+                name="age"
                 required
             />
 
             <input 
                 type="text"
                 placeholder="Gender"
-                [(ngModel)]="user.stdGender"
-                name="email"
+                [(ngModel)]="player.gender"
+                name="gender"
                 required
             />
 
@@ -51,16 +51,16 @@
             <input 
                 type="text"
                 placeholder="Contact"
-                [(ngModel)]="user.stdContact"
-                name="email"
+                [(ngModel)]="player.contact"
+                name="contact"
                 required
             />
 
             <input 
                 type="text"
-                placeholder="Belt"
-                [(ngModel)]="user.stdBelt"
-                name="email"
+                placeholder="Fee"
+                [(ngModel)]="player.fee"
+                name="fee"
                 required
             />
 
@@ -71,28 +71,17 @@
             <input 
                 type="text"
                 placeholder="History (opt)"
-                [(ngModel)]="user.stdHistory"
-                name="email"
-                /* required */
-            />
-
-            <input 
-                type="text"
-                placeholder="Fee"
-                [(ngModel)]="user.stdFee"
-                name="email"
-                required
+                [(ngModel)]="player.history"
+                name="history"
             />
 
         </div>
 
 
         <textarea 
-            type="text"
             placeholder="Reason (opt)"
-            [(ngModel)]="user.stdReason"
-            name="email"
-            /* required */
+            [(ngModel)]="player.reason"
+            name="reason"
         ></textarea>
 
         
@@ -134,6 +123,6 @@
 
     </form>
 
-    <p class="footer">Create a Taekwondo Player</p>
+    <p class="footer">Create a GYM Player</p>
 
 </div>

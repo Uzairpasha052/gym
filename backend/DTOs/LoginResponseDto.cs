@@ -6,7 +6,7 @@ public class LoginResponseDto
 {
         public int Id {get; set;}
 
-        public string Role {get; set;} = string.Empty;
+        public int RoleId {get; set;} 
 
         public string FullName {get; set;} = string.Empty;
 

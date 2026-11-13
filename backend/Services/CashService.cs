@@ -1,118 +1,149 @@
-using Microsoft.EntityFrameworkCore;
-using backend.Data;
 using backend.DTO.CashIn;
 using backend.DTO.CashOut;
+using backend.DTOs.Pagination;
+using backend.Helper;
 using backend.Interfaces;
 using backend.Models;
+using backend.Repo_Interface;
+using System.Text.Json;
 
 namespace backend.Services;
 
-public class CashService: ICashService
+public class CashService : ICashService
 {
-    private readonly AppDbContext _context;
+    private readonly ICashRepository _repository;
+    private readonly CurrentUserService _currentUser;
+    private readonly IAuditLogService _logService;
 
-    public CashService(AppDbContext context)
+
+    public CashService(ICashRepository repository, CurrentUserService currentUser, 
+        IAuditLogService logService)
     {
-        _context = context;
+        _repository = repository;
+        _currentUser = currentUser;
+        _logService = logService;
     }
 
     public async Task<bool> CashInAsync(CashInDto dto)
     {
-        var player = await _context.Players
-            .FirstOrDefaultAsync(p => p.Id == dto.PlayerId);
+        var player = await _repository.GetPlayerByIdAsync(dto.PlayerId);
+        if (dto.Amount <= 0 || player is null) return false;
 
-        if (player == null)
-        {
-            return false;
-        }
-
-        if (dto.Amount <= 0)
-        {
-            return false;
-        }
-
-         var cashIn = new CashIn
+        var cashIn = new CashIn
         {
             PlayerId = dto.PlayerId,
+            Player = player,
             Amount = dto.Amount,
-            PaymentDate = dto.PaymentDate == default
-                ? DateTime.UtcNow
-                : dto.PaymentDate
+            PaymentDate = dto.PaymentDate == default ? DateTime.UtcNow : dto.PaymentDate,
+            CreatedBy = _currentUser.UserId
         };
+        
+        var result = await _repository.CreateCashInAsync(cashIn);
 
-        _context.CashIns.Add(cashIn);
-        await _context.SaveChangesAsync();
+        var newValues = JsonSerializer.Serialize(new
+        {
+            result.Id,
+            PlayerName = player.Name,
+            result.Amount,
+            result.PaymentDate,
+        });
+
+        await _logService.LogAsync(
+            _currentUser.UserId,
+            "Create",
+            "CashIn",
+            result.Id.ToString(),
+            null,
+            newValues
+        );
 
         return true;
     }
 
-    public async Task<bool> CashOutAsync(
-            CashOutDto dto)
+    public async Task<bool> CashOutAsync(CashOutDto dto)
     {
-        if (dto.Amount <= 0)
-        {
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(dto.Description))
-        {
-            return false;
-        }
+        if (dto.Amount <= 0 || string.IsNullOrWhiteSpace(dto.Description)) return false;
 
         var cashOut = new CashOut
         {
             Amount = dto.Amount,
-            PaymentDate = dto.PaymentDate == default
-                ? DateTime.UtcNow
-                : dto.PaymentDate,
+            PaymentDate = dto.PaymentDate == default ? DateTime.UtcNow : dto.PaymentDate,
             Description = dto.Description.Trim(),
+            CreatedBy = _currentUser.UserId
         };
 
-        _context.CashOuts.Add(cashOut);
-        await _context.SaveChangesAsync();
+        var result = await _repository.CreateCashOutAsync(cashOut);
+
+        var newValues = JsonSerializer.Serialize(new
+        {
+            result.Id,
+            result.Description,
+            result.Amount,
+            result.PaymentDate,
+        });
+
+        await _logService.LogAsync(
+            _currentUser.UserId,
+            "Create",
+            "CashOut",
+            result.Id.ToString(),
+            null,
+            newValues
+        );
+
         return true;
     }
 
-    public async Task<List<CashInListDto>> GetAllCashInAsync(int? year = null, int? month = null)
+    public async Task<PagedResult<CashInListDto>> GetAllCashInAsync(PaginationRequest request,
+        int? year = null, int? month = null)
     {
-        var targetYear = year ?? DateTime.Today.Year;
-        var targetMonth = month ?? DateTime.Today.Month;
+        var (start, end) = GetMonthRange(year, month);
+        var cashIns = await _repository.GetCashInsAsync(request, start, end);
 
-        var start = new DateTime(targetYear, targetMonth, 1);
-        var end = start.AddMonths(1);
-
-        return await _context.CashIns
-            .Include(c => c.Player)
-            .Where(c => c.PaymentDate >= start && c.PaymentDate < end)
-            .OrderByDescending(c => c.PaymentDate)
-            .Select(c => new CashInListDto
+        return new PagedResult<CashInListDto>
+        {
+            Items = cashIns.Items.Select(c => new CashInListDto
             {
                 Id = c.Id,
                 PlayerId = c.PlayerId,
-                PlayerName = c.Player.stdName,
+                PlayerName = c.Player.Name,
                 Amount = c.Amount,
                 PaymentDate = c.PaymentDate
-            })
-            .ToListAsync();
+            }).ToList(),
+
+            TotalCount = cashIns.TotalCount,
+            PageNumber = cashIns.PageNumber,
+            PageSize = cashIns.PageSize
+        };
+        //return 
     }
 
-    public async Task<List<CashOutDto>> GetAllCashOutAsync(int? year = null, int? month = null)
+    public async Task<PagedResult<CashOutDto>> GetAllCashOutAsync(PaginationRequest request, 
+        int? year = null, int? month = null)
     {
-        var targetYear = year ?? DateTime.Today.Year;
-        var targetMonth = month ?? DateTime.Today.Month;
+        var (start, end) = GetMonthRange(year, month);
+        var cashOuts = await _repository.GetCashOutsAsync(request, start, end);
 
-        var start = new DateTime(targetYear, targetMonth, 1);
-        var end = start.AddMonths(1);
-
-        return await _context.CashOuts
-            .Where(c => c.PaymentDate >= start && c.PaymentDate < end)
-            .OrderByDescending(c => c.PaymentDate)
-            .Select(c => new CashOutDto
+        return new PagedResult<CashOutDto>
+        {
+            Items = cashOuts.Items.Select(c => new CashOutDto
             {
+                Id = c.Id,
                 Amount = c.Amount,
                 Description = c.Description,
-                PaymentDate = c.PaymentDate,
-            })
-            .ToListAsync();
+                PaymentDate = c.PaymentDate
+            }).ToList(),
+
+            TotalCount = cashOuts.TotalCount,
+            PageNumber = cashOuts.PageNumber,
+            PageSize = cashOuts.PageSize
+        };
+        //return 
+    }
+
+    private static (DateTime Start, DateTime End) GetMonthRange(int? year, int? month)
+    {
+        var start = new DateTime(year ?? DateTime.Today.Year, month ?? DateTime.Today.Month, 1);
+        return (start, start.AddMonths(1));
     }
 }

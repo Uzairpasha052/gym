@@ -10,6 +10,7 @@ import { AttendanceResponse } from '../../models/attendance/attendance.model';
 import { AdminAttendance } from '../../models/attendance/attAdmin.model';
 import { UpdateAttendance } from '../../models/attendance/attUpdate.model';
 import { MarkAttendance } from '../../models/attendance/markAttendance.model';
+import { PagedResult } from '../../models/paged-result.model';
 
 
 // @Service()
@@ -24,12 +25,12 @@ export class Attendance {
         private http: HttpClient
     ){}
 
-    getTodayAttendance(): Observable<TodayAttendance[]> {
-        return this.http.get<TodayAttendance[]>(
-            `${this.apiUrl}/attendance/today`
+    getTodayAttendance(pageNumber = 1, pageSize = 10): Observable<PagedResult<TodayAttendance>> {
+        return this.http.get<PagedResult<TodayAttendance>>(
+            `${this.apiUrl}/attendance/today`, { params: { pageNumber, pageSize } }
         );
     }
-
+ 
     saveAttendance(data: MarkAttendance[]): Observable<AttendanceResponse> {
         return this.http.post<AttendanceResponse>(
             `${this.apiUrl}/attendance/save`,
@@ -37,7 +38,7 @@ export class Attendance {
         )
     }
 
-    getAttendanceHistory(year?: number, month?: number): Observable<AdminAttendance[]> {
+    getAttendanceHistory(year?: number, month?: number, pageNumber = 1, pageSize = 10): Observable<PagedResult<AdminAttendance>> {
         let params = new HttpParams();
 
         if (year != null) {
@@ -47,8 +48,9 @@ export class Attendance {
         if (month != null) {
             params = params.set('month', month);
         }
+        params = params.set('pageNumber', pageNumber).set('pageSize', pageSize);
 
-        return this.http.get<AdminAttendance[]>(
+        return this.http.get<PagedResult<AdminAttendance>>(
             `${this.apiUrl}/attendance/history`,
             { params }
         );
