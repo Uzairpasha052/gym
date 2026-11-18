@@ -4,7 +4,10 @@
   <div class="hero_section">
     <div class="logo_section">
       <div class="hero_img_1"><img src="images/gym-logo.png" alt="Gym logo"></div>
-      <div class="hero_img_3"><img src="images/gym_pic-8.jfif" alt="Gym"></div>
+      <div class="hero_img_3">
+        <button routerLink="/dashboard"> <i class="fa-solid fa-arrow-left"></i> Go to Dashboard</button>
+        <img src="images/gym_pic-8.jfif" alt="Gym">
+      </div>
     </div>
 
     <div class="header_section">
@@ -13,12 +16,17 @@
 
     <div class="cash-container">
       <aside class="sidebar" aria-label="Cash flow navigation">
-        <button routerLink="/cash/in" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-          <i class="fa-solid fa-money-bill-transfer"></i> Cash In
-        </button>
-        <button routerLink="/cash/out" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-          <i class="fa-solid fa-arrow-up-from-bracket"></i> Cash Out
-        </button>
+        @if (loadingMenu) {
+          <span class="sidebar-message">Loading navigation…</span>
+        } @else if (menuError) {
+          <span class="sidebar-message error">{{ menuError }}</span>
+        } @else {
+          @for (item of cashMenus; track item.id) {
+            <button [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+              <i [class]="item.icon" aria-hidden="true"></i> {{ item.title }}
+            </button>
+          }
+        }
       </aside>
 
       <main class="content">

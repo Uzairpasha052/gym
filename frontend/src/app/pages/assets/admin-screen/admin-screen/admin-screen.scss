@@ -6,6 +6,11 @@
     position: relative;
 }
 
+.sidebar-group { display: grid; gap: 4px; }
+.sidebar-group h2 { margin: 8px 10px 4px; color: #667085; font-size: 11px; text-transform: uppercase; }
+.sidebar-message { margin: 12px; color: #667085; font-size: 13px; }
+.sidebar-message.error { color: #b42318; }
+
 .hero_section{
     position: absolute;
     // background-color: rgb(214, 216, 216);
@@ -47,6 +52,35 @@
 // }
 
 .hero_img_3{
+
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    button {
+        background-color: #474444;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        font-size: 10px;
+        font-weight: 500;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #28a745;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    button i {
+        font-size: 16px;
+    }
 
     img{
         height: 80px;
@@ -214,17 +248,17 @@
 
 // For Layout
 .admin-container{
-    // display:flex;
+    display:flex;
     height:calc(100vh - 80px);
 }
 
 .sidebar{
-    // width:200px;
+    width:200px;
     // background:#a1a7ad;
     background: #d2d3d3;
     // background: #fff;
     display:flex;
-    // flex-direction:column;
+    flex-direction:column;
     padding:10px 20px;
     gap: 20px;
 }

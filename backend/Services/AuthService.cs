@@ -32,12 +32,30 @@ public class AuthService : IAuthService
         var existingUser = await _repository.GetByEmailAsync(request.Email);
         if (role is null || existingUser is not null) return false;
 
+        Player? player = null;
+        if (role.Name.Equals("Member", StringComparison.OrdinalIgnoreCase))
+        {
+            if (request.PlayerId is null)
+                throw new ArgumentException("Select the player profile for this member account.");
+            player = await _repository.GetPlayerByIdAsync(request.PlayerId.Value);
+            if (player is null)
+                throw new ArgumentException("The selected player profile is unavailable.");
+            if (await _repository.IsPlayerLinkedAsync(player.Id))
+                throw new ArgumentException("This player already has a login account.");
+        }
+        else if (request.PlayerId.HasValue)
+        {
+            throw new ArgumentException("Only Member accounts can be linked to a player profile.");
+        }
+
         var user = new User
         {
             FullName = request.FullName,
             Email = request.Email,
             RoleId = role.Id,
             Role = role,
+            PlayerId = player?.Id,
+            Player = player,
             CreatedBy = _currentUser.UserId
         };
         user.Password = _passwordHasher.HashPassword(user, request.Password);
@@ -68,9 +86,13 @@ public class AuthService : IAuthService
     public async Task<LoginResponseDto?> ValidateLogin(LoginDto request)
     {
         var user = await _repository.GetByEmailAsync(request.Email);
-        if (user is null || _passwordHasher.VerifyHashedPassword(user, user.Password, request.Password) == PasswordVerificationResult.Failed)
+
+        //if (!user.IsActive) return null;
+        
+        if (user is null || !user.IsActive || _passwordHasher.VerifyHashedPassword(user, user.Password, request.Password) == PasswordVerificationResult.Failed)
             return null;
 
+        
         var newValues = JsonSerializer.Serialize(new
         {
             user.Id,

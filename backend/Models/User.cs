@@ -1,4 +1,3 @@
-using backend.Model.Database;
 
 namespace backend.Models;
 
@@ -15,6 +14,8 @@ public class User
 
     public int RoleId { get; set; }
     public Role Role { get; set; } = null!;
+    public int? PlayerId { get; set; }
+    public Player? Player { get; set; }
     //public string Role { get; set; } = string.Empty; 
     // Admin, HR, Employee
 

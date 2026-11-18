@@ -29,6 +29,8 @@ public class UserService : IUserService
     public async Task<PagedResult<UserDto>> GetAllUsersAsync(PaginationRequest request)
     {
         var users = await _repository.GetAllAsync(request);
+
+        //var activeUsers = users.Items.Where(u => u.IsActive).ToList();
         //return users.Select(MapToDto).ToList();
         return new PagedResult<UserDto>
         {
@@ -105,18 +107,34 @@ public class UserService : IUserService
         var role = await _repository.GetRoleByIdAsync(dto.RoleId);
         if (role is null) return null;
 
+        Player? player = null;
+        if (role.Name.Equals("Member", StringComparison.OrdinalIgnoreCase))
+        {
+            if (dto.PlayerId is null) throw new ArgumentException("Select the player profile for this member account.");
+            player = await _repository.GetPlayerByIdAsync(dto.PlayerId.Value);
+            if (player is null) throw new ArgumentException("The selected player profile is unavailable.");
+            if (await _repository.IsPlayerLinkedAsync(player.Id, user.Id))
+                throw new ArgumentException("This player already has a login account.");
+        }
+        else if (dto.PlayerId.HasValue)
+            throw new ArgumentException("Only Member accounts can be linked to a player profile.");
+
         var oldValues = JsonSerializer.Serialize(new
         {
             user.FullName,
             user.Email,
             user.RoleId,
-            user.Role.Name
+            Role = user.Role.Name,
+            user.PlayerId,
+            Player = user.Player?.Name
         });
 
         user.FullName = dto.FullName;
         user.Email = dto.Email;
         user.RoleId = dto.RoleId;
         user.Role = role;
+        user.PlayerId = player?.Id;
+        user.Player = player;
 
         if (!await _repository.UpdateAsync(user)) return null;
         var result = MapToDto(user);
@@ -126,7 +144,9 @@ public class UserService : IUserService
             result.FullName,
             result.Email,
             result.RoleId,
-            result.RoleName
+            result.RoleName,
+            result.PlayerId,
+            result.PlayerName
         });
 
         await _logService.LogAsync(
@@ -149,6 +169,8 @@ public class UserService : IUserService
         Email = user.Email,
         RoleId = user.RoleId,
         RoleName = user.Role?.Name ?? string.Empty,
+        PlayerId = user.PlayerId,
+        PlayerName = user.Player?.Name,
         CreatedAt = user.CreatedAt
     };
 }

@@ -18,12 +18,14 @@ import { MessageService } from 'primeng/api';
 import { TagModule } from 'primeng/tag';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-home-screen',
   imports: [CommonModule, FormsModule, ToastModule, TableModule,
     CheckboxModule, ButtonModule, TagModule,
-    InputTextModule, ProgressSpinnerModule],
+    InputTextModule, ProgressSpinnerModule,
+    RouterLink],
   templateUrl: './home-screen.html',
   styleUrl: './home-screen.scss',
   providers: [MessageService]

@@ -19,7 +19,15 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto request)
     {
-        var created = await _userService.Register(request);
+        bool created;
+        try
+        {
+            created = await _userService.Register(request);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
 
         if (!created)
         {

@@ -1,7 +1,7 @@
 ﻿
 using backend.DTOs.Pagination;
 using backend.Helper;
-using backend.Model.Database;
+using backend.Models;
 
 namespace backend.Repo_Interface;
 

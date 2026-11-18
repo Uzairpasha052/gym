@@ -38,4 +38,9 @@ public class Player
 
     public ICollection<CashIn> CashIns { get; set; } = new List<CashIn>();
 
+    public ICollection<PlayerMembership> Memberships { get; set; }
+    = new List<PlayerMembership>();
+
+    public User? User { get; set; }
+
 }

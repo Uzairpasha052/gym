@@ -47,7 +47,9 @@ public class UserController : ControllerBase
     [HttpPut("updateUser/{id}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto dto)
     {
-        var user = await _userService.UpdateUser(id, dto);
+        backend.DTOs.UserDto? user;
+        try { user = await _userService.UpdateUser(id, dto); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
 
         if(user == null)
             return NotFound();

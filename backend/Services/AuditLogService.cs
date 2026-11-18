@@ -4,7 +4,7 @@ using backend.DTOs;
 using backend.DTOs.Pagination;
 using backend.Helper;
 using backend.Interfaces;
-using backend.Model.Database;
+using backend.Models;
 using backend.Repo_Interface;
 
 namespace backend.Services;

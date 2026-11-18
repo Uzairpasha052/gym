@@ -34,6 +34,7 @@
             [(ngModel)]="user.roleId"
             name="roleId"
             required
+            (change)="loadPlayers()"
             [disabled]="rolesLoading || roles.length === 0">
 
             <option [ngValue]="null">
@@ -46,6 +47,14 @@
 
         </select>
         @if (rolesError) { <p class="error">{{ rolesError }}</p> }
+
+        @if (selectedRoleName.toLowerCase() === 'member') {
+            <select [(ngModel)]="user.playerId" name="playerId" required [disabled]="playersLoading || players.length === 0">
+                <option [ngValue]="null">{{ playersLoading ? 'Loading players…' : 'Select player profile' }}</option>
+                @for (player of players; track player.id) { <option [ngValue]="player.id">{{ player.name }} · {{ player.contact }}</option> }
+            </select>
+            @if (!playersLoading && players.length === 0) { <p class="error">No active player profiles are available.</p> }
+        }
 
         <button type="submit" class="register">
             Register

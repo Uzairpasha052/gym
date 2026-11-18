@@ -12,6 +12,10 @@ public class CashRepository(AppDbContext context) : ICashRepository
     public Task<Player?> GetPlayerByIdAsync(int playerId) => context.Players
         .FirstOrDefaultAsync(p => p.Id == playerId);
 
+    public Task<DateOnly?> GetLatestCoverageEndAsync(int playerId) => context.CashIns
+        .Where(c => c.PlayerId == playerId && c.CoverageEndDate != null)
+        .MaxAsync(c => (DateOnly?)c.CoverageEndDate);
+
     public async Task<CashIn> CreateCashInAsync(CashIn cashIn)
     {
         await context.CashIns.AddAsync(cashIn);

@@ -42,6 +42,6 @@ export class AdminService {
     }
 
     isAdmin(): boolean {
-        return this.getRole() === 'Admin';
+        return this.getRole()?.toLowerCase() === 'admin';
     }
 }

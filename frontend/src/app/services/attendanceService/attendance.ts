@@ -38,7 +38,15 @@ export class Attendance {
         )
     }
 
-    getAttendanceHistory(year?: number, month?: number, pageNumber = 1, pageSize = 10): Observable<PagedResult<AdminAttendance>> {
+    getAttendanceHistory(
+        year?: number,
+        month?: number,
+        pageNumber = 1,
+        pageSize = 10,
+        searchTerm = '',
+        sortField = '',
+        sortOrder = 1
+    ): Observable<PagedResult<AdminAttendance>> {
         let params = new HttpParams();
 
         if (year != null) {
@@ -48,12 +56,31 @@ export class Attendance {
         if (month != null) {
             params = params.set('month', month);
         }
-        params = params.set('pageNumber', pageNumber).set('pageSize', pageSize);
+        params = params.set('pageNumber', pageNumber).set('pageSize', pageSize)
+            .set('searchTerm', searchTerm).set('sortField', sortField).set('sortOrder', sortOrder);
 
         return this.http.get<PagedResult<AdminAttendance>>(
             `${this.apiUrl}/attendance/history`,
             { params }
         );
+    }
+
+    getPlayerAttendanceSummary(year: number, month: number, playerName: string): Observable<{
+        playerName: string;
+        presentCount: number;
+        absentCount: number;
+        totalCount: number;
+    }> {
+        const params = new HttpParams()
+            .set('year', year)
+            .set('month', month)
+            .set('playerName', playerName);
+        return this.http.get<{
+            playerName: string;
+            presentCount: number;
+            absentCount: number;
+            totalCount: number;
+        }>(`${this.apiUrl}/attendance/history/summary`, { params });
     }
 
     // getMyAttendance(): Observable<AttendanceHistory[]>{

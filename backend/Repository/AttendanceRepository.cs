@@ -1,5 +1,6 @@
 using backend.Data;
 using backend.DTOs.Pagination;
+using backend.DTO.Attendance;
 using backend.Helper;
 using backend.Models;
 using backend.Repo_Interface;
@@ -55,13 +56,26 @@ public class AttendanceRepository : IAttendanceRepository
         int pageNumber = Math.Max(1, request.PageNumber);
         int pageSize = Math.Clamp(request.PageSize, 1, 100);
 
-        var query = context.Attendances
+        IQueryable<Attendance> query = context.Attendances
         .AsNoTracking()
         .Include(a => a.Player)
-        .Where(a => a.AttendanceDate >= start && a.AttendanceDate < end)
-        .OrderByDescending(a => a.AttendanceDate)
-        .ThenByDescending(a => a.CreatedAT);
-        //.ToListAsync();
+        .Where(a => a.AttendanceDate >= start && a.AttendanceDate < end);
+
+        var search = request.SearchTerm?.Trim();
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(a => a.Player.Name.Contains(search)
+                || (a.Status != null && a.Status.Contains(search))
+                || (a.Remarks != null && a.Remarks.Contains(search)));
+
+        var descending = request.SortOrder < 0;
+        query = (request.SortField?.Trim().ToLowerInvariant()) switch
+        {
+            "playername" => descending ? query.OrderByDescending(a => a.Player.Name) : query.OrderBy(a => a.Player.Name),
+            "attendancedate" or "date" => descending ? query.OrderByDescending(a => a.CreatedAT) : query.OrderBy(a => a.CreatedAT),
+            "status" => descending ? query.OrderByDescending(a => a.Status) : query.OrderBy(a => a.Status),
+            "remarks" => descending ? query.OrderByDescending(a => a.Remarks) : query.OrderBy(a => a.Remarks),
+            _ => query.OrderByDescending(a => a.AttendanceDate).ThenByDescending(a => a.CreatedAT)
+        };
 
         int totalCount = await query.CountAsync();
 
@@ -84,6 +98,20 @@ public class AttendanceRepository : IAttendanceRepository
         .Where(a => a.PlayerId == playerId)
         .OrderByDescending(a => a.AttendanceDate)
         .ToListAsync();
+
+    public Task<AttendancePlayerSummaryDto?> GetPlayerSummaryAsync(string playerName, DateOnly start, DateOnly end) =>
+        context.Attendances
+            .AsNoTracking()
+            .Where(a => a.AttendanceDate >= start && a.AttendanceDate < end && a.Player.Name.Contains(playerName))
+            .GroupBy(a => new { a.PlayerId, a.Player.Name })
+            .Select(group => new AttendancePlayerSummaryDto
+            {
+                PlayerName = group.Key.Name,
+                PresentCount = group.Count(a => a.Status == "Present"),
+                AbsentCount = group.Count(a => a.Status == "Absent")
+            })
+            .OrderBy(summary => summary.PlayerName)
+            .FirstOrDefaultAsync();
 
     public Task<Attendance?> GetByIdAsync(int id) => context.Attendances
         .FirstOrDefaultAsync(a => a.Id == id);

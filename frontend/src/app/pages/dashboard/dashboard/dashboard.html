@@ -16,7 +16,6 @@
             <div class="dash_userInfo">
                 <span style="color: rgb(23, 189, 5); font-weight: bold; margin-bottom: 5px;">Welcome</span>
                 <span> <strong>User Name :</strong> {{userName}} - <strong>{{userRole}}</strong></span>
-                <!-- <span> <strong>Company :</strong> 006 - SoftronicSYS</span> -->
             </div>
             <div class="dash_icon">
                 <span>
@@ -29,13 +28,6 @@
 
     <div class="dash_logout_container">
         <div class="dash_logout">
-            <!-- <span>
-                <a href="#">Secret Questions & Answers</a>
-            </span>
-            <span style="color: white;"> | </span>
-            <span>
-                <a href="#">Change Password</a>
-            </span> -->
             <span style="color: white;"> | </span>
             <span>
                 <!-- <a href="#">Logout</a> -->
@@ -59,61 +51,35 @@
             </div>
 
             <div class="menu">
-
                 <div class="menu-item">
-                    <div class="circle dark" (click)="toggleApps()">
-                        <!-- <i class="fa fa-th"></i> -->
-                         <iconify-icon icon="material-symbols:grid-on" class="dark_icon"></iconify-icon>
-                    </div>
+                    <button class="circle dark" type="button" (click)="toggleApps()"
+                            [attr.aria-expanded]="!hideApp" aria-label="Toggle dashboard shortcuts">
+                        <iconify-icon icon="material-symbols:grid-on" class="dark_icon" aria-hidden="true"></iconify-icon>
+                    </button>
                 </div>
 
                 <div class="menu-item-container">
-
-                    <div class="menu-item">
-                        <div class="circle light" [class.hide]="hideApp">
-                            <button (click)="openHomeScreen($event)">
-                                 <iconify-icon class="dashboardImg" icon="material-symbols:fact-check-outline"></iconify-icon>
-                            </button>
-                        </div>
-                    </div>
-
-                    @if (adminservice.isAdmin()) {
-                        <div class="menu-item">
-                            <div class="circle light" [class.hide]="hideApp">
-                                <button (click)="openAdminScreen($event)">
-                                    <iconify-icon class="dashboardImg" icon="material-symbols:shield-person-outline"></iconify-icon>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="menu-item">
-                            <div class="circle light" [class.hide]="hideApp">
-                                <button (click)="openCashScreen($event)">
-                                    <iconify-icon class="adminImg" icon="material-symbols:payments-outline"></iconify-icon>
-                                </button>
-                            </div>
-                        </div>
-                    }
-
-                    <!-- <div class="menu-item">
-                        <div class="circle light" [class.hide]="hideApp">
-                            <a href="#">
-                            <img src="images/ESS_Portal.png" alt="ESS">
+                    @if (loadingMenu) {
+                        <!-- <p class="menu-error">Loading shortcuts…</p> -->
+                    } @else if (menuError) {
+                        <p class="menu-error">{{ menuError }}</p>
+                    } @else {
+                        @for (item of parentMenus; track item.id) {
+                            <a class="circle light" [class.hide]="hideApp" [routerLink]="item.route" [attr.aria-label]="'Open ' + item.title" [title]="item.title">
+                                <iconify-icon [attr.icon]="iconifyName(item.icon)" aria-hidden="true"></iconify-icon>
+                                <span class="menu-label">{{ item.title }}</span>
                             </a>
-                            <!-- <img src="images/ESS_Portal.png"> 
-                            <!-- <p>ESS Portal</p> 
-                        </div>
-                    </div>                 -->
-
+                        }
+                    }
                 </div>
             </div>
         </main>
 
     </div>
-    <footer>
+    <!-- <footer>
         <span>V-2.00.2026</span>
-        <!-- <span>Copyright © 2026 softronicSys (Pvt.) Ltd</span> -->
+        <!-- <span>Copyright © 2026 softronicSys (Pvt.) Ltd</span>
         <span>Made by UZAIR</span> 
-    </footer>
+    </footer> -->
 
 </div>

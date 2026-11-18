@@ -1,4 +1,4 @@
-using backend.Model.Database;
+using backend.Models;
 
 namespace backend.Repo_Interface;
 

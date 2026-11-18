@@ -52,6 +52,9 @@ export class PlayerRegister {
   users: PlayerModel[] = [];
   totalRecords = 0;
   pageSize = 8;
+  searchTerm = '';
+  sortField = '';
+  sortOrder = 1;
 
   constructor(
     private getPlayer: PlayerService,
@@ -69,12 +72,12 @@ export class PlayerRegister {
 
   loadUsers(pageNumber = 1, pageSize = this.pageSize): void {
     this.pageSize = pageSize;
-    this.getPlayer.getPlayers(pageNumber, pageSize).subscribe({
+    this.getPlayer.getPlayers(pageNumber, pageSize, this.searchTerm, this.sortField, this.sortOrder).subscribe({
       next: (data) => {
         this.users = data.items;
         this.totalRecords = data.totalCount;
         this.cdr.detectChanges();
-        console.log("LoadPlayer",data);
+        // console.log("LoadPlayer",data);
       },
       error: (error) => {
         this.messageService.add({
@@ -88,6 +91,14 @@ export class PlayerRegister {
 
   onPage(event: TableLazyLoadEvent): void {
     const pageSize = event.rows ?? this.pageSize;
+    if (event.globalFilter !== undefined) {
+      const filter = event.globalFilter;
+      this.searchTerm = (Array.isArray(filter) ? filter[0] : filter ?? '').trim();
+    }
+    if (event.sortField !== undefined) {
+      this.sortField = (Array.isArray(event.sortField) ? event.sortField[0] : event.sortField) ?? '';
+      this.sortOrder = event.sortOrder ?? 1;
+    }
     this.loadUsers(Math.floor((event.first ?? 0) / pageSize) + 1, pageSize);
   }
 

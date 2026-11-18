@@ -26,7 +26,7 @@
             [totalRecords]="usersTotal"
             (onLazyLoad)="onPage($event)"
             [rowsPerPageOptions]="[5,10,15]"
-            [globalFilterFields]="['fullName', 'email', 'role']"
+            [globalFilterFields]="['fullName', 'email', 'roleName']"
             [tableStyle]="{'min-width':'60rem'}">
 
             <ng-template pTemplate="caption">
@@ -53,9 +53,9 @@
                         Email
                         <p-sortIcon field="email"></p-sortIcon>
                     </th>
-                    <th pSortableColumn="role">
+                    <th pSortableColumn="roleName">
                         Role
-                        <p-sortIcon field="role"></p-sortIcon>
+                        <p-sortIcon field="roleName"></p-sortIcon>
                     </th>
                     <th pSortableColumn="createdAt">
                         Created At
@@ -126,11 +126,21 @@
                             optionLabel="name"
                             optionValue="id"
                             [(ngModel)]="selectedUser.roleId"
+                            (ngModelChange)="selectedUser.playerId = null"
                             [appendTo]="'body'">
                         </p-select>
                         <label for="role">Role</label>
                     </p-floatlabel>
                 </div>
+
+                @if (isEditingMember) {
+                    <div class="field">
+                        <p-floatlabel variant="on">
+                            <p-select class="w-full" inputId="playerProfile" [options]="players" optionLabel="name" optionValue="id" [(ngModel)]="selectedUser.playerId" [appendTo]="'body'"></p-select>
+                            <label for="playerProfile">Linked player profile</label>
+                        </p-floatlabel>
+                    </div>
+                }
 
             </div>
 

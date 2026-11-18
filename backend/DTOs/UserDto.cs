@@ -10,6 +10,10 @@ public class UserDto
     
     public int RoleId { get; set; }
 
+    public int? PlayerId { get; set; }
+
+    public string? PlayerName { get; set; }
+
     public string RoleName { get; set; } = string.Empty;
     
     public DateTime CreatedAt { get; set; }

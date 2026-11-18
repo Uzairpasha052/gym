@@ -147,6 +147,12 @@ public class AttendanceService : IAttendanceService
  
     }
 
+    public Task<AttendancePlayerSummaryDto?> GetPlayerAttendanceSummaryAsync(string playerName, int? year = null, int? month = null)
+    {
+        var start = new DateOnly(year ?? DateTime.Today.Year, month ?? DateTime.Today.Month, 1);
+        return _repository.GetPlayerSummaryAsync(playerName.Trim(), start, start.AddMonths(1));
+    }
+
     public async Task<List<AttendanceHistoryDto>> GetPlayerAttendanceHistoryAsync(int playerId)
     {
         var attendances = await _repository.GetPlayerHistoryAsync(playerId);

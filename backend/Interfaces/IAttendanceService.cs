@@ -18,6 +18,8 @@ public interface IAttendanceService
     Task<PagedResult<AdminAttendanceDto>> GetAttendanceHistoryAsync(PaginationRequest request,
         int? year = null, int? month = null);
 
+    Task<AttendancePlayerSummaryDto?> GetPlayerAttendanceSummaryAsync(string playerName, int? year = null, int? month = null);
+
     // Individual player history
     Task<List<AttendanceHistoryDto>> GetPlayerAttendanceHistoryAsync(int playerId);
 

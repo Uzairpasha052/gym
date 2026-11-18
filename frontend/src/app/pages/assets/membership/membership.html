@@ -1,0 +1,113 @@
+<p-toast position="top-right"></p-toast>
+
+<main class="membership-page">
+  <header class="membership-page-header">
+    <div>
+      <h1>Memberships</h1>
+      <p>Purchase a multi-month membership and review a player’s membership history.</p>
+    </div>
+  </header>
+
+  <section class="membership-card purchase-card">
+    <div class="card-heading">
+      <div>
+        <h2>Purchase Membership</h2>
+        <p>Membership charges are calculated from the player’s monthly fee.</p>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="purchase()">
+      <div class="membership-form-grid">
+        <div class="field">
+          <label for="membership-player">Player <span>*</span></label>
+          <p-select
+            inputId="membership-player"
+            formControlName="playerId"
+            [options]="players"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Select an active player"
+            [filter]="true"
+            filterBy="name"
+            [loading]="loadingPlayers"
+            [disabled]="loadingPlayers || players.length === 0"
+            appendTo="body"
+            class="w-full"
+            (onChange)="onPlayerChange($event.value)">
+          </p-select>
+          @if (form.controls['playerId'].touched && form.controls['playerId'].invalid) {
+            <small class="field-error">Select a player to continue.</small>
+          }
+          @if (!loadingPlayers && players.length === 0) {
+            <small class="field-hint">No active players are available.</small>
+          }
+        </div>
+
+        <div class="field">
+          <label for="membership-duration">Duration <span>*</span></label>
+          <p-inputNumber
+            inputId="membership-duration"
+            formControlName="durationMonths"
+            [min]="3"
+            [max]="120"
+            [showButtons]="true"
+            [useGrouping]="false"
+            suffix=" months"
+            class="w-full">
+          </p-inputNumber>
+          @if (form.controls['durationMonths'].touched && form.controls['durationMonths'].invalid) {
+            <small class="field-error">Membership duration must be from 3 to 120 months.</small>
+          }
+        </div>
+      </div>
+
+      <p class="discount-note">The backend applies the configured membership discount and records the payment in Cash In.</p>
+
+      <div class="form-actions">
+        <button pButton type="submit" label="Purchase Membership" icon="pi pi-check" [loading]="purchasing" [disabled]="form.invalid || purchasing || loadingPlayers"></button>
+      </div>
+    </form>
+  </section>
+
+  <section class="membership-card history-card">
+    <div class="card-heading history-heading">
+      <div>
+        <h2>Membership History</h2>
+        <p>Select a player to see their current and previous memberships.</p>
+      </div>
+      @if (selectedPlayerId !== null) {
+        <span class="record-count">{{ totalMemberships }} record{{ totalMemberships === 1 ? '' : 's' }}</span>
+      }
+    </div>
+
+    @if (selectedPlayerId === null) {
+      <div class="empty-state">Choose a player above to view membership history.</div>
+    } @else {
+      <p-table [value]="memberships" [loading]="loadingMemberships" [lazy]="true" [paginator]="true" [rows]="membershipPageSize" [totalRecords]="totalMemberships" [rowsPerPageOptions]="[5, 10, 25]" (onLazyLoad)="onMembershipPage($event)" responsiveLayout="scroll" styleClass="membership-table">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Duration</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Discount</th>
+            <th>Paid</th>
+            <th>Status</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-membership>
+          <tr>
+            <td>{{ membership.durationMonths }} months</td>
+            <td>{{ membership.startDate | date:'dd MMM yyyy' }}</td>
+            <td>{{ membership.endDate | date:'dd MMM yyyy' }}</td>
+            <td>{{ membership.discountAmount | number:'1.2-2' }}</td>
+            <td>{{ membership.finalAmount | number:'1.2-2' }}</td>
+            <td><span class="status-badge" [class]="'status-badge status-' + membership.status.toLowerCase()">{{ membership.status }}</span></td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr><td colspan="6" class="empty-state">No memberships found for this player.</td></tr>
+        </ng-template>
+      </p-table>
+    }
+  </section>
+</main>

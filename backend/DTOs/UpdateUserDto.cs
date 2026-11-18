@@ -8,4 +8,6 @@ public class UpdateUserDto
 
     public int RoleId { get; set; }
 
+    public int? PlayerId { get; set; }
+
 }

@@ -11,4 +11,6 @@ public class CashInListDto
     public decimal Amount { get; set; }
 
     public DateTime PaymentDate { get; set; }
+    public DateOnly? CoverageStartDate { get; set; }
+    public DateOnly? CoverageEndDate { get; set; }
 }

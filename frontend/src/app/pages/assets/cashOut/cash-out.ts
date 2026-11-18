@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -12,7 +13,8 @@ import { CashService } from '../../../services/cashFlowService/cash-service';
 @Component({
   selector: 'app-cash-out',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, InputNumberModule, DatePicker, ButtonModule, TableModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, InputNumberModule, DatePicker, ButtonModule, TableModule, ToastModule],
+  providers: [MessageService],
   templateUrl: './cash-out.html',
   styleUrl: '../cash-flow/cash-flow.scss'
 })

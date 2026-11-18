@@ -29,12 +29,20 @@ public class CashService : ICashService
         var player = await _repository.GetPlayerByIdAsync(dto.PlayerId);
         if (dto.Amount <= 0 || player is null) return false;
 
+        var paymentDate = dto.PaymentDate == default ? DateTime.UtcNow : dto.PaymentDate;
+        var coverageStart = DateOnly.FromDateTime(paymentDate);
+        var latestCoverageEnd = await _repository.GetLatestCoverageEndAsync(dto.PlayerId);
+        if (latestCoverageEnd.HasValue && latestCoverageEnd.Value >= coverageStart)
+            coverageStart = latestCoverageEnd.Value.AddDays(1);
+
         var cashIn = new CashIn
         {
             PlayerId = dto.PlayerId,
             Player = player,
             Amount = dto.Amount,
-            PaymentDate = dto.PaymentDate == default ? DateTime.UtcNow : dto.PaymentDate,
+            PaymentDate = paymentDate,
+            CoverageStartDate = coverageStart,
+            CoverageEndDate = coverageStart.AddDays(29),
             CreatedBy = _currentUser.UserId
         };
         
@@ -46,6 +54,8 @@ public class CashService : ICashService
             PlayerName = player.Name,
             result.Amount,
             result.PaymentDate,
+            result.CoverageStartDate,
+            result.CoverageEndDate,
         });
 
         await _logService.LogAsync(
@@ -108,7 +118,9 @@ public class CashService : ICashService
                 PlayerId = c.PlayerId,
                 PlayerName = c.Player.Name,
                 Amount = c.Amount,
-                PaymentDate = c.PaymentDate
+                PaymentDate = c.PaymentDate,
+                CoverageStartDate = c.CoverageStartDate,
+                CoverageEndDate = c.CoverageEndDate
             }).ToList(),
 
             TotalCount = cashIns.TotalCount,

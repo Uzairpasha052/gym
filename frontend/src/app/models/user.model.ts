@@ -5,7 +5,9 @@ export interface UserModel {
     fullName: string,
     email: string,
     roleId: number,
-    role: string,
+    roleName: string,
+    playerId?: number | null,
+    playerName?: string | null,
     createdAt: string
 
 }

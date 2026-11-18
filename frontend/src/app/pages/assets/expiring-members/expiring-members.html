@@ -1,0 +1,17 @@
+<p-toast position="top-right"></p-toast>
+<main class="expiry-page">
+  <header>
+    <h1>Expiring Fees</h1>
+    <p>Members whose current paid coverage ends within the next {{ reminderDays }} days.</p>
+  </header>
+  <p-table [value]="members" [lazy]="true" [paginator]="true" [rows]="rows" [totalRecords]="totalRecords"
+    [rowsPerPageOptions]="[5, 10, 25]" [loading]="loading" (onLazyLoad)="onPage($event)" responsiveLayout="scroll">
+    <ng-template pTemplate="header">
+      <tr><th>Player</th><th>Contact</th><th>Coverage</th><th>Expiry Date</th></tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-member>
+      <tr><td>{{ member.playerName }}</td><td>{{ member.contact }}</td><td>{{ member.coverageType }}</td><td>{{ member.expiryDate | date:'dd MMM yyyy' }}</td></tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage"><tr><td colspan="4" class="empty">No memberships expire in the next {{ reminderDays }} days.</td></tr></ng-template>
+  </p-table>
+</main>

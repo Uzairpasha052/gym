@@ -15,10 +15,16 @@
     @if (loadError) { <p class="role-load-error" role="alert">{{ loadError }}</p> }
     <p-table [value]="roles" [loading]="loading" [tableStyle]="{'min-width':'35rem'}">
       <ng-template pTemplate="header">
-        <tr><th>Role Name</th><th>Created</th><th>Actions</th></tr>
+        <tr>
+          <th>Role Id</th>
+          <th>Role Name</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
       </ng-template>
       <ng-template pTemplate="body" let-role>
         <tr>
+          <td>{{ role.id }}</td>
           <td>{{ role.name }}</td>
           <td>{{ role.createdAt | date:'dd/MM/yyyy' }}</td>
           <td class="role-actions">
@@ -28,6 +34,42 @@
         </tr>
       </ng-template>
       <ng-template pTemplate="emptymessage"><tr><td colspan="3">No roles found.</td></tr></ng-template>
+    </p-table>
+  </div>
+
+  <div class="role-table-card sidebar-routes-card">
+    <header class="sidebar-routes-header">
+      <div>
+        <h3>Sidebar Routes</h3>
+        <p>Create dashboard buttons and the pages shown inside their sidebars.</p>
+      </div>
+      <button pButton type="button" label="Add Route" icon="pi pi-plus" (click)="openCreateSidebarMenu()"></button>
+    </header>
+    @if (sidebarMenusError) { <p class="role-load-error" role="alert">{{ sidebarMenusError }}</p> }
+    <p-table [value]="sidebarMenus" [loading]="sidebarMenusLoading" [tableStyle]="{'min-width':'48rem'}">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Title</th>
+          <th>Route</th>
+          <th>Parent</th>
+          <th>Icon</th>
+          <th>Order</th>
+          <th>Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-menu>
+        <tr>
+          <td>{{ menu.title }}</td>
+          <td><code>{{ menu.route }}</code></td>
+          <td>{{ parentTitle(menu) }}</td>
+          <td>{{ menu.icon }}</td>
+          <td>{{ menu.displayOrder }}</td>
+          <td>
+            <button pButton type="button" icon="pi pi-pencil" severity="info" [rounded]="true" [text]="true" [attr.aria-label]="'Edit ' + menu.title" (click)="openEditSidebarMenu(menu)"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="6">No sidebar routes found.</td></tr></ng-template>
     </p-table>
   </div>
 </section>
@@ -40,5 +82,55 @@
   <ng-template pTemplate="footer">
     <button pButton type="button" label="Cancel" severity="secondary" (click)="dialogVisible=false"></button>
     <button pButton type="button" label="Save" icon="pi pi-check" (click)="saveRole()"></button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog [header]="editingSidebarMenu ? 'Edit Sidebar Route' : 'Add Sidebar Route'" [(visible)]="sidebarDialogVisible" [modal]="true" [resizable]="false" [style]="{width:'min(42rem, 95vw)'}">
+  <div class="sidebar-route-form">
+    <div class="sidebar-route-field">
+      <label for="sidebarTitle">Title</label>
+      <input pInputText id="sidebarTitle" [(ngModel)]="sidebarForm.title" maxlength="100" />
+    </div>
+    <div class="sidebar-route-field">
+      <label for="sidebarRoute">Angular route</label>
+      <input pInputText id="sidebarRoute" [(ngModel)]="sidebarForm.route" maxlength="200" placeholder="/users" />
+      <small>Child routes are relative to their selected parent. For example, use /cash/in under Admin.</small>
+    </div>
+    <div class="sidebar-route-field">
+      <label for="sidebarIcon">Icon class or Iconify name</label>
+      <input pInputText id="sidebarIcon" [(ngModel)]="sidebarForm.icon" maxlength="150" placeholder="fa-solid fa-user" />
+    </div>
+    <div class="sidebar-route-field">
+      <label for="sidebarParent">Parent menu</label>
+      <select id="sidebarParent" [(ngModel)]="sidebarForm.parentId" [ngModelOptions]="{standalone:true}">
+        <option [ngValue]="null">Dashboard button</option>
+        @for (parent of selectableSidebarParents; track parent.id) {
+          <option [ngValue]="parent.id">{{ parent.title }} ({{ parent.route }})</option>
+        }
+      </select>
+    </div>
+    <div class="sidebar-route-field">
+      <label for="sidebarOrder">Display order</label>
+      <input pInputText id="sidebarOrder" type="number" min="1" [(ngModel)]="sidebarForm.displayOrder" />
+    </div>
+    <div class="sidebar-route-field">
+      <label for="sidebarRoles">Roles allowed to see this route</label>
+      <select id="sidebarRoles" multiple [(ngModel)]="sidebarForm.roleIds" [ngModelOptions]="{standalone:true}" size="5">
+        @for (role of roles; track role.id) {
+          <option [ngValue]="role.id">{{ role.name }}</option>
+        }
+      </select>
+      @if (loadError) { <small class="role-load-error">{{ loadError }}</small> }
+    </div>
+    @if (editingSidebarMenu) {
+      <label class="sidebar-active-toggle">
+        <input type="checkbox" [(ngModel)]="sidebarForm.isActive" />
+        Route is active
+      </label>
+    }
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="Cancel" severity="secondary" (click)="sidebarDialogVisible=false"></button>
+    <button pButton type="button" [label]="editingSidebarMenu ? 'Update Route' : 'Create Route'" icon="pi pi-check" [loading]="sidebarSaving" (click)="saveSidebarMenu()"></button>
   </ng-template>
 </p-dialog>

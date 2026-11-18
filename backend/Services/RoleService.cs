@@ -2,7 +2,7 @@ using System.Text.Json;
 using backend.DTOs.Roles;
 using backend.Helper;
 using backend.Interfaces;
-using backend.Model.Database;
+using backend.Models;
 using backend.Repo_Interface;
 
 namespace backend.Services;
@@ -38,7 +38,15 @@ public class RoleService : IRoleService
 
         await _repository.AddAsync(role);
         await _repository.SaveChangesAsync();
-        await _audit.LogAsync(_currentUser.UserId, "Create", "Role", role.Id.ToString(), null, JsonSerializer.Serialize(Map(role)));
+        await _audit.LogAsync(
+            _currentUser.UserId, 
+            "Create", 
+            "Role", 
+            role.Id.ToString(), 
+            null, 
+            JsonSerializer.Serialize(Map(role))
+        );
+
         return Map(role);
     }
 
@@ -95,6 +103,8 @@ public class RoleService : IRoleService
 
         role.IsActive = false;
         role.IsDeleted = true;
+        role.UpdatedAt = DateTime.UtcNow;
+        role.UpdatedBy = _currentUser.UserId;
 
         await _repository.DeleteAsync(role);
         await _repository.SaveChangesAsync();

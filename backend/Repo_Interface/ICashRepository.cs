@@ -7,6 +7,7 @@ namespace backend.Repo_Interface;
 public interface ICashRepository
 {
     Task<Player?> GetPlayerByIdAsync(int playerId);
+    Task<DateOnly?> GetLatestCoverageEndAsync(int playerId);
     Task<CashIn> CreateCashInAsync(CashIn cashIn);
     Task<CashOut> CreateCashOutAsync(CashOut cashOut);
 

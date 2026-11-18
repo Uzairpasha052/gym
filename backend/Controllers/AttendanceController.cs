@@ -52,6 +52,18 @@ public class AttendanceController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("history/summary")]
+    public async Task<IActionResult> GetAttendanceSummary(
+        [FromQuery] string playerName,
+        [FromQuery] int? year,
+        [FromQuery] int? month)
+    {
+        if (string.IsNullOrWhiteSpace(playerName)) return BadRequest(new { message = "Player name is required." });
+        if (month is < 1 or > 12) return BadRequest(new { message = "Month must be between 1 and 12." });
+        var result = await _attendanceService.GetPlayerAttendanceSummaryAsync(playerName, year, month);
+        return result is null ? NotFound() : Ok(result);
+    }
+
     // Individual player attendance history
     [HttpGet("player/{playerId}")]
     public async Task<IActionResult> GetPlayerAttendanceHistory(int playerId)

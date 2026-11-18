@@ -1,7 +1,6 @@
 ﻿
-using backend.Models;
 
-namespace backend.Model.Database;
+namespace backend.Models;
 
 public class AuditLog
 {

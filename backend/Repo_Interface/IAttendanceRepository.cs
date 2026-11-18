@@ -1,4 +1,5 @@
 using backend.DTOs.Pagination;
+using backend.DTO.Attendance;
 using backend.Helper;
 using backend.Models;
 
@@ -11,6 +12,7 @@ public interface IAttendanceRepository
     Task<Attendance?> GetByPlayerAndDateAsync(int playerId, DateOnly date);
     Task<PagedResult<Attendance>> GetHistoryAsync(PaginationRequest request, 
         DateOnly start, DateOnly end);
+    Task<AttendancePlayerSummaryDto?> GetPlayerSummaryAsync(string playerName, DateOnly start, DateOnly end);
     Task<List<Attendance>> GetPlayerHistoryAsync(int playerId);
     Task<Attendance?> GetByIdAsync(int id);
     Task AddAsync(Attendance attendance);

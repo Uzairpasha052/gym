@@ -1,7 +1,7 @@
 ﻿using backend.Data;
 using backend.DTOs.Pagination;
 using backend.Helper;
-using backend.Model.Database;
+using backend.Models;
 using backend.Repo_Interface;
 using Microsoft.EntityFrameworkCore;
 

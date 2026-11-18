@@ -7,6 +7,8 @@ import { Auth } from '../../../../services/authService/auth';
 import { registerModel } from '../../../../models/register.model';
 import { RoleModel } from '../../../../models/role.model';
 import { RoleService } from '../../../../services/role-service/role.service';
+import { PlayerService } from '../../../../services/playerService/player';
+import { PlayerModel } from '../../../../models/player/player.model';
 
 @Component({
   selector: 'app-register-popup',
@@ -29,10 +31,13 @@ export class RegisterPopup implements OnInit {
   roles: RoleModel[] = [];
   rolesLoading = true;
   rolesError = '';
+  players: PlayerModel[] = [];
+  playersLoading = false;
 
   constructor(
     private auth: Auth,
     private roleService: RoleService,
+    private playerService: PlayerService,
     private cdr: ChangeDetectorRef
     
   ){}
@@ -54,10 +59,21 @@ export class RegisterPopup implements OnInit {
     });
   }
 
+  get selectedRoleName(): string { return this.roles.find(role => role.id === this.user.roleId)?.name ?? ''; }
+
+  loadPlayers(): void {
+    if (this.selectedRoleName.toLowerCase() !== 'member') { this.user.playerId = null; return; }
+    this.playersLoading = true;
+    this.playerService.getPlayers(1, 100).subscribe({
+      next: result => { this.players = result.items.filter(player => player.status === 'Active'); this.playersLoading = false; this.cdr.detectChanges(); },
+      error: () => { this.playersLoading = false; this.cdr.detectChanges(); }
+    });
+  }
+
   register(form: NgForm){
 
     // Stop here if required fields are empty 
-    if (form.invalid || this.user.roleId === null || this.rolesLoading || this.roles.length === 0) {
+    if (form.invalid || this.user.roleId === null || this.rolesLoading || this.roles.length === 0 || (this.selectedRoleName.toLowerCase() === 'member' && !this.user.playerId)) {
       form.control.markAllAsTouched(); 
       
       Swal.fire({

@@ -111,7 +111,6 @@ public class AttendanceReportDocument : IDocument
                     columns.ConstantColumn(30);       // #
                     columns.RelativeColumn(2.5f);      // Player Name
                     columns.RelativeColumn(2.5f);      // Father Name
-                    columns.RelativeColumn(1.2f);      // Belt
                     columns.RelativeColumn(1.5f);      // Date
                     columns.RelativeColumn(1.5f);      // Status
                     columns.RelativeColumn(4f);        // Remarks
@@ -130,10 +129,6 @@ public class AttendanceReportDocument : IDocument
                     header.Cell()
                         .Element(HeaderCellStyle)
                         .Text("Father Name");
-
-                    //header.Cell()
-                    //    .Element(HeaderCellStyle)
-                    //    .Text("Belt");
 
                     header.Cell()
                         .Element(HeaderCellStyle)
@@ -163,11 +158,6 @@ public class AttendanceReportDocument : IDocument
                     table.Cell()
                         .Element(DataCellStyle)
                         .Text(record.FatherName);
-
-                    //table.Cell()
-                    //    .Element(DataCellStyle)
-                    //    .AlignCenter()
-                    //    .Text(record.Belt);
 
                     table.Cell()
                         .Element(DataCellStyle)

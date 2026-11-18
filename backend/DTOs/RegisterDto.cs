@@ -13,4 +13,6 @@ public class RegisterDto
     [Range(1, int.MaxValue)]
     public int RoleId { get; set; }
 
+    public int? PlayerId { get; set; }
+
 }

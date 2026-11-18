@@ -1,4 +1,4 @@
-import { Injectable, Service } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -20,10 +20,10 @@ export class UserService {
         private http: HttpClient
     ){}
 
-    getUsers(pageNumber = 1, pageSize = 5): Observable<PagedResult<UserModel>>{
+    getUsers(pageNumber = 1, pageSize = 5, searchTerm = '', sortField = '', sortOrder = 1): Observable<PagedResult<UserModel>>{
         return this.http.get<PagedResult<UserModel>>(
             `${this.apiUrl}/users/allUsers`,
-            { params: { pageNumber, pageSize } }
+            { params: { pageNumber, pageSize, searchTerm, sortField, sortOrder } }
         )
     }
 

@@ -21,8 +21,8 @@ export class PlayerService {
 
   constructor(private http: HttpClient) {}
 
-  getPlayers(pageNumber = 1, pageSize = 10): Observable<PagedResult<PlayerModel>> {
-    return this.http.get<PagedResult<PlayerModel>>(this.apiUrl, { params: { pageNumber, pageSize } });
+  getPlayers(pageNumber = 1, pageSize = 10, searchTerm = '', sortField = '', sortOrder = 1): Observable<PagedResult<PlayerModel>> {
+    return this.http.get<PagedResult<PlayerModel>>(this.apiUrl, { params: { pageNumber, pageSize, searchTerm, sortField, sortOrder } });
   }
 
   getPlayerById(id: number): Observable<PlayerModel> {

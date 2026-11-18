@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 import { DatePicker } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -15,7 +16,8 @@ import { PlayerService } from '../../../services/playerService/player';
 @Component({
   selector: 'app-cash-in',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, SelectModule, InputNumberModule, DatePicker, ButtonModule, TableModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, SelectModule, InputNumberModule, DatePicker, ButtonModule, TableModule, ToastModule],
+  providers: [MessageService],
   templateUrl: './cash-in.html',
   styleUrl: '../cash-flow/cash-flow.scss'
 })
@@ -27,6 +29,8 @@ export class CashIn implements OnInit {
   totalRecords = 0;
   pageSize = 10;
   saving = false;
+  loadingRecords = false;
+  invalidSelectedFee = false;
 
   constructor(
     private fb: FormBuilder,
@@ -39,11 +43,10 @@ export class CashIn implements OnInit {
   ngOnInit(): void {
     this.form = this.fb.group({
       playerId: [null, Validators.required],
-      amount: [null, [Validators.required, Validators.min(1)]],
+      amount: [{ value: null, disabled: true }],
       date: [new Date(), Validators.required]
     });
     this.loadPlayers();
-    this.loadRecords();
   }
 
   loadPlayers(): void {
@@ -56,15 +59,38 @@ export class CashIn implements OnInit {
     });
   }
 
+  onPlayerChange(playerId: number | null): void {
+    this.invalidSelectedFee = false;
+    const player = this.players.find(item => item.id === playerId);
+    const amount = player ? Number(String(player.fee).replace(/,/g, '').trim()) : 0;
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.invalidSelectedFee = playerId !== null;
+      this.form.controls['amount'].setValue(null);
+      return;
+    }
+
+    this.form.controls['amount'].setValue(amount);
+  }
+
   loadRecords(pageNumber = 1, pageSize = this.pageSize): void {
     this.pageSize = pageSize;
-    this.cashService.GetAllCashIn(this.selectedMonth.getFullYear(), this.selectedMonth.getMonth() + 1, pageNumber, pageSize).subscribe({
-      next: response => {
-        this.records = response.items;
-        this.totalRecords = response.totalCount;
-        this.cdr.detectChanges();
+    this.loadingRecords = true;
+    this.cashService.GetAllCashIn(this.selectedMonth.getFullYear(), 
+      this.selectedMonth.getMonth() + 1, pageNumber, pageSize).subscribe({
+        next: response => {
+          this.records = response.items;
+          this.totalRecords = response.totalCount;
+          this.loadingRecords = false;
+          this.cdr.detectChanges();
       },
-      error: error => this.showError(error, 'Unable to load cash-in records.')
+      error: error => {
+        this.records = [];
+        this.totalRecords = 0;
+        this.loadingRecords = false;
+        this.showError(error, 'Unable to load cash-in records.');
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -77,8 +103,14 @@ export class CashIn implements OnInit {
 
   save(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    const value = this.form.getRawValue();
+    if (!Number.isFinite(value.amount) || value.amount <= 0) {
+      this.invalidSelectedFee = true;
+      this.messages.add({ severity: 'error', summary: 'Invalid fee', detail: 'The selected player does not have a valid monthly fee.' });
+      return;
+    }
+
     this.saving = true;
-    const value = this.form.value;
     const request: CashInModel = {
       playerId: value.playerId,
       amount: value.amount,
@@ -88,6 +120,7 @@ export class CashIn implements OnInit {
       next: () => {
         this.saving = false;
         this.form.reset({ playerId: null, amount: null, date: new Date() });
+        this.invalidSelectedFee = false;
         this.messages.add({ severity: 'success', summary: 'Saved', detail: 'Cash in saved successfully.' });
         this.loadRecords();
         this.cdr.detectChanges();

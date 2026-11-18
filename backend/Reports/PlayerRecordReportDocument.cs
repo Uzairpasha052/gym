@@ -113,7 +113,6 @@ public class PlayerRecordReportDocuments : IDocument
                 columns.ConstantColumn(40);  // Age
                 columns.ConstantColumn(50);  // Gender
                 columns.RelativeColumn(1.6f); // Contact
-                columns.RelativeColumn(1.2f); // Belt
                 columns.RelativeColumn(1.5f); // History
                 columns.RelativeColumn(1.1f);   // Fee
                 columns.RelativeColumn(1.2f); // Status
@@ -136,7 +135,7 @@ public class PlayerRecordReportDocuments : IDocument
             {
                 var player = _players[i];
 
-                table.Cell().Element(DataCellStyle).Text((i + 1).ToString());
+                table.Cell().Element(DataCellStyle).Text(player.Id.ToString()); //(i + 1).ToString()
                 table.Cell().Element(DataCellStyle).Text(player.Name);
                 table.Cell().Element(DataCellStyle).Text(player.FName);
                 table.Cell().Element(DataCellStyle).Text(player.Age);

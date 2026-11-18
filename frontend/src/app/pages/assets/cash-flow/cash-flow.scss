@@ -44,6 +44,35 @@
 
 .hero_img_3{
 
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    button {
+        background-color: #474444;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        font-size: 10px;
+        font-weight: 500;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #28a745;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    button i {
+        font-size: 16px;
+    }
+
     img{
         height: 80px;
         width: 200px;
@@ -106,6 +135,9 @@
 .sidebar button.active{
     background:#4caf50;
 }
+
+.sidebar-message { padding: 8px; color: #667085; }
+.sidebar-message.error { color: #b42318; }
 
 
 

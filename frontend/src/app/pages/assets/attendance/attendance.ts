@@ -29,10 +29,13 @@ export class AttendancePage implements OnInit {
   attendanceList: AdminAttendance[] = [];
   attendanceTotal = 0;
   attendancePageSize = 10;
+  searchTerm = '';
+  sortField = '';
+  sortOrder = 1;
   attendanceloading = false;
   selectedMonth = new Date();
   searchPlayerName = '';
-  selectedPlayer: { name: string; age: string } | null = null;
+  selectedPlayer: { name: string } | null = null;
   presentDays = 0;
   absentDays = 0;
   displayAttEditDialog = false;
@@ -74,13 +77,14 @@ export class AttendancePage implements OnInit {
     this.attendanceloading = true;
     const year = this.selectedMonth.getFullYear();
     const month = this.selectedMonth.getMonth() + 1;
-    this.attendanceService.getAttendanceHistory(year, month, pageNumber, pageSize).subscribe({
+    this.attendanceService.getAttendanceHistory(
+      year, month, pageNumber, pageSize, this.searchTerm, this.sortField, this.sortOrder
+    ).subscribe({
       next: result => {
         this.attendanceList = result.items;
         this.attendanceTotal = result.totalCount;
         this.attendanceloading = false;
-        if (this.searchPlayerName.trim()) this.searchPlayer();
-        else this.cdr.detectChanges();
+        this.cdr.detectChanges();
       },
       error: error => {
         this.attendanceloading = false;
@@ -89,23 +93,42 @@ export class AttendancePage implements OnInit {
     });
   }
 
-  onMonthChange(): void { this.loadAttendance(); }
+  onMonthChange(): void {
+    this.loadAttendance();
+    if (this.searchPlayerName.trim()) this.searchPlayer();
+  }
 
   onPage(event: TableLazyLoadEvent): void {
     const size = event.rows ?? this.attendancePageSize;
+    if (event.globalFilter !== undefined) {
+      const filter = event.globalFilter;
+      this.searchTerm = (Array.isArray(filter) ? filter[0] : filter ?? '').trim();
+    }
+    if (event.sortField !== undefined) {
+      this.sortField = (Array.isArray(event.sortField) ? event.sortField[0] : event.sortField) ?? '';
+      this.sortOrder = event.sortOrder ?? 1;
+    }
     this.loadAttendance(Math.floor((event.first ?? 0) / size) + 1, size);
   }
 
   searchPlayer(): void {
-    const name = this.searchPlayerName.trim().toLowerCase();
+    const name = this.searchPlayerName.trim();
     if (!name) { this.clearPlayer(); return; }
-    const match = this.attendanceList.find(item => item.playerName.toLowerCase().includes(name));
-    if (!match) { this.clearPlayer(); return; }
-    const rows = this.attendanceList.filter(item => item.playerName.toLowerCase() === match.playerName.toLowerCase());
-    this.selectedPlayer = { name: match.playerName, age: match.playerBelt };
-    this.presentDays = rows.filter(row => row.status === 'Present').length;
-    this.absentDays = rows.filter(row => row.status === 'Absent').length;
-    this.updateChart();
+    this.attendanceService.getPlayerAttendanceSummary(
+      this.selectedMonth.getFullYear(), this.selectedMonth.getMonth() + 1, name
+    ).subscribe({
+      next: summary => {
+        this.selectedPlayer = { name: summary.playerName };
+        this.presentDays = summary.presentCount;
+        this.absentDays = summary.absentCount;
+        this.updateChart();
+      },
+      error: error => {
+        this.clearPlayer();
+        if (error.status !== 404) this.showError(error, 'Unable to load attendance summary.');
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   clearPlayer(): void {
