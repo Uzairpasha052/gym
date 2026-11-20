@@ -14,6 +14,14 @@ export class SidebarService {
     return this.http.get<SidebarMenuItem[]>(`${this.apiUrl}/parents`);
   }
 
+  getMyMenu(): Observable<SidebarMenuItem[]> {
+    return this.http.get<SidebarMenuItem[]>(`${this.apiUrl}/my-menu`);
+  }
+
+  getAllMenus(): Observable<SidebarMenuItem[]> {
+    return this.http.get<SidebarMenuItem[]>(`${this.apiUrl}/all`);
+  }
+
   getChildMenus(parentId: number): Observable<SidebarMenuItem[]> {
     return this.http.get<SidebarMenuItem[]>(`${this.apiUrl}/children/${parentId}`);
   }

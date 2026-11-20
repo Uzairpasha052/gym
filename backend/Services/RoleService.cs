@@ -61,8 +61,16 @@ public class RoleService : IRoleService
         if (name.Length < 2)
             throw new InvalidOperationException("Role name must contain at least 2 characters.");
 
-        if (role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !dto.Name.Trim().Equals(role.Name, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("The Admin role cannot be renamed.");
+        //if (role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !dto.Name.Trim().Equals(role.Name, StringComparison.OrdinalIgnoreCase))
+        //    throw new InvalidOperationException("The Admin role cannot be renamed.");
+        if (role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!dto.Name.Trim().Equals(role.Name, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The Admin role cannot be renamed.");
+
+            if (!dto.IsActive)
+                throw new InvalidOperationException("The Admin role cannot be deactivated.");
+        }
 
         if (await _repository.NameExistsAsync(name, id))
             throw new InvalidOperationException("A role with this name already exists.");
@@ -70,6 +78,8 @@ public class RoleService : IRoleService
         var old = JsonSerializer.Serialize(Map(role));
 
         role.Name = name;
+        role.IsActive = dto.IsActive;
+        role.IsDeleted = !dto.IsActive;
         role.UpdatedAt = DateTime.UtcNow;
         role.UpdatedBy = _currentUser.UserId;
 
@@ -99,7 +109,7 @@ public class RoleService : IRoleService
         if (await _repository.IsAssignedAsync(id))
             throw new InvalidOperationException("This role is assigned to users and cannot be deleted.");
 
-        var old = JsonSerializer.Serialize(Map(role));
+        var oldValue = JsonSerializer.Serialize(Map(role));
 
         role.IsActive = false;
         role.IsDeleted = true;
@@ -109,13 +119,15 @@ public class RoleService : IRoleService
         await _repository.DeleteAsync(role);
         await _repository.SaveChangesAsync();
 
+        var newValue = JsonSerializer.Serialize(Map(role));
+
         await _audit.LogAsync(
             _currentUser.UserId,
             "Delete",
             "Role",
             id.ToString(),
-            old,
-            null
+            oldValue,
+            newValue
         );
 
         return true;
@@ -127,6 +139,7 @@ public class RoleService : IRoleService
         {
             Id = role.Id,
             Name = role.Name,
+            IsActive = role.IsActive,
             CreatedAt = role.CreatedAt
         };
     }

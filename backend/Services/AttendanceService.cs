@@ -58,7 +58,8 @@ public class AttendanceService : IAttendanceService
             return new AttendanceResponseDto { Success = false, Message = "No attendance data received." };
 
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var pendingLogs = new List<(Attendance Attendance, string Action, string? OldValues)>();
+        //var pendingLogs = new List<(Attendance Attendance, string Action, string? OldValues)>();
+        var isUpdate = false;
         foreach (var item in dto)
         {
             var attendance = await _repository.GetByPlayerAndDateAsync(item.PlayerId, today);
@@ -74,49 +75,67 @@ public class AttendanceService : IAttendanceService
                     CreatedBy = _currentUser.UserId
                 };
                 await _repository.AddAsync(attendance);
-                pendingLogs.Add((attendance, "Create", null));
+                //pendingLogs.Add((attendance, "Create", null));
             }
             else
             {
-                var oldValues = JsonSerializer.Serialize(new
-                {
-                    attendance.PlayerId,
-                    attendance.AttendanceDate,
-                    attendance.Status,
-                    attendance.Remarks
-                });
+                //var oldValues = JsonSerializer.Serialize(new
+                //{
+                //    attendance.PlayerId,
+                //    attendance.AttendanceDate,
+                //    attendance.Status,
+                //    attendance.Remarks
+                //});
                 attendance.Status = item.Status;
                 attendance.Remarks = item.Remarks;
                 attendance.UpdatedAt = DateTime.UtcNow;
                 attendance.UpdatedBy = _currentUser.UserId;
-                pendingLogs.Add((attendance, "Update", oldValues));
+                //pendingLogs.Add((attendance, "Update", oldValues));
+                isUpdate = true;
             }
         }
 
         await _repository.SaveChangesAsync();
 
-        foreach (var pending in pendingLogs)
-        {
-            var attendance = pending.Attendance;
-            var newValues = JsonSerializer.Serialize(new
-            {
-                attendance.PlayerId,
-                attendance.AttendanceDate,
-                attendance.Status,
-                attendance.Remarks
-            });
+        //foreach (var pending in pendingLogs)
+        //{
+        //    var attendance = pending.Attendance;
+        //    var newValues = JsonSerializer.Serialize(new
+        //    {
+        //        attendance.PlayerId,
+        //        attendance.AttendanceDate,
+        //        attendance.Status,
+        //        attendance.Remarks
+        //    });
 
-            await _logService.LogAsync(
+        //    await _logService.LogAsync(
+        //        _currentUser.UserId,
+        //        pending.Action,
+        //        "Attendance",
+        //        attendance.Id.ToString(),
+        //        pending.OldValues,
+        //        newValues
+        //    );
+        //}
+
+        await _logService.LogAsync(
                 _currentUser.UserId,
-                pending.Action,
+                isUpdate ? "UPdate" : "Create",
                 "Attendance",
-                attendance.Id.ToString(),
-                pending.OldValues,
-                newValues
-            );
-        }
+                "Bulk Attendance",
+                null,
+                JsonSerializer.Serialize(new
+                {
+                    AttendanceDate = today,
+                    TotalPlayers = dto.Count,
+                    ActionBy = _currentUser.UserId
+                })
+        );
 
-        return new AttendanceResponseDto { Success = true, Message = "Attendance saved successfully." };
+        return new AttendanceResponseDto 
+        { 
+            Success = true, Message = "Attendance saved successfully." 
+        };
     }
 
     public async Task<PagedResult<AdminAttendanceDto>> GetAttendanceHistoryAsync(PaginationRequest request,

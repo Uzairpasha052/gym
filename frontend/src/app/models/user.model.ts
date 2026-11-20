@@ -9,5 +9,6 @@ export interface UserModel {
     playerId?: number | null,
     playerName?: string | null,
     createdAt: string
+    isActive: boolean
 
 }

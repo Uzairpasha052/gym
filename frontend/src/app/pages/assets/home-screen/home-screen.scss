@@ -1,114 +1,5 @@
-.main_container{
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    // padding:10px;
-    box-sizing: border-box;
-}
-
-.hero_section{
-    background-color: rgb(237, 250, 250);
-    width: 100%;
-}
-
-.logo_section{
-    display: flex;
-    align-items: center;
-    background-color: white ;
-    width: 100%;
-    height:80px;
-    padding: 0 10px;
-
-    justify-content: space-between;
-}
-
-.hero_img_1{
-
-    img{
-        height: 80px;
-        width: 150px;
-    }
-}
-
-// .hero_img_2{
-//     width: 750px;
-//     // background-color: aqua;
-//     padding: 0 30px;
-//     display: flex;
-//     justify-content: end;
-
-//     img{
-//         height: 75px;
-//     }
-// }
-
-.hero_img_3{
-
-    display: flex;
-    align-items: center;
-    gap: 20px;
-
-    button {
-        background-color: #474444;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        font-size: 10px;
-        font-weight: 500;
-        border-radius: 6px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.3s ease;
-    }
-
-    button:hover {
-        background-color: #28a745;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    button i {
-        font-size: 16px;
-    }
-
-    img{
-        height: 80px;
-        width: 200px;
-    }
-}
-
-.header_section{
-    background-color: rgb(79, 78, 77);
-    padding:3px 0;
-    overflow: hidden;
-    position: relative;
-}
-.scroll_text{
-    display: inline-block;
-    animation: scrollLeft 10s linear infinite;
-    white-space: nowrap;
-    padding-left: 100%;
-    color: white;
-
-    &:hover{
-        animation-play-state: paused;
-    }
-}
-
-@keyframes scrollLeft {
-    0%{
-        transform: translateX(0%);
-    }
-    100%{
-        transform: translateX(-100%);
-    }
-    
-}
-
 .attendance-container {
-    padding: 24px;
+    padding: 0;
     width: 100%;
 }
 
@@ -125,14 +16,14 @@
 
 .attendance-header h2 {
     margin: 0;
-    font-size: 24px;
+    font-size: 1.5rem;
     font-weight: 600;
 }
 
 .subtitle {
-    margin: 6px 0 0;
+    margin:  .35rem 0 0;
     color: #6b7280;
-    font-size: 14px;
+    // font-size: 14px;
 }
 
 .attendance-date {

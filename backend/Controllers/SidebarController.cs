@@ -4,6 +4,7 @@ using backend.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using backend.Helper;
 
 namespace backend.Controllers;
 
@@ -13,11 +14,30 @@ namespace backend.Controllers;
 public class SidebarController : ControllerBase
 {
     private readonly ISidebarService _service;
+    private readonly CurrentUserService _currentUser;
 
-    public SidebarController(ISidebarService sidebarService)
+    public SidebarController(ISidebarService sidebarService, CurrentUserService currentUser)
     {
         _service = sidebarService;
+        _currentUser = currentUser;
     }
+
+    [HttpGet("my-menu")]
+    public async Task<IActionResult> GetMyMenu()
+    {
+        var roleIdValue = User.Claims.FirstOrDefault(claim =>
+            string.Equals(claim.Type, "roleId", StringComparison.OrdinalIgnoreCase))?.Value;
+        var userId = _currentUser.UserId;
+
+        if (!int.TryParse(roleIdValue, out var roleId) || userId is null)
+            return Unauthorized(new { message = "User or role information is missing from the token." });
+
+        return Ok(await _service.GetMenuForUserAsync(roleId, userId.Value));
+    }
+
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAllMenus() => Ok(await _service.GetAllMenusAsync());
 
     [HttpGet("parents")]
     public async Task<IActionResult> GetParentMenus()

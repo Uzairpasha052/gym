@@ -1,34 +1,79 @@
 <div class="main_container">
   <div class="hero_section">
-   
-    <div class="logo_section">
+    
+    <header class="logo_section">
       <div class="hero_img_1"><img src="images/gym-logo.png" alt="Gym logo"></div>
       <div class="hero_img_3">
-        <button routerLink="/dashboard"> <i class="fa-solid fa-arrow-left"></i> Go to Dashboard</button>
+        <button type="button" (click)="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
         <img src="images/gym_pic-8.jfif" alt="Gym">
       </div>
-    </div>
+    </header>
 
     <div class="admin-container">
-      <aside class="sidebar" aria-label="Administration navigation">
+      <aside class="sidebar" aria-label="Main navigation">
         @if (loadingMenu) {
-          <p class="sidebar-message">Loading navigation…</p>
+          <p class="sidebar-message">Loading navigation...</p>
         } @else if (menuError) {
           <p class="sidebar-message error">{{ menuError }}</p>
         } @else if (menuItems.length === 0) {
-          <p class="sidebar-message">No pages are assigned to this role.</p>
+          <p class="sidebar-message">No pages are assigned to this account.</p>
         } @else {
           @for (item of menuItems; track item.id) {
-            <button [routerLink]="routeFor(item)" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-              <i [class]="item.icon" aria-hidden="true"></i> {{ item.title }}
-            </button>
+            @if (item.children.length || item.isGroup) {
+              <button type="button" class="sidebar-group-button" [class.active]="isGroupActive(item)" [attr.aria-expanded]="isExpanded(item)" (click)="toggleGroup(item)">
+                @if (isFontIcon(item.icon)) {
+                  <i [class]="item.icon" aria-hidden="true"></i>
+                } @else {
+                  <iconify-icon [attr.icon]="item.icon" aria-hidden="true"></iconify-icon>
+                }
+                <span>{{ item.title }}</span>
+                <i class="pi" [class.pi-chevron-down]="!isExpanded(item)" [class.pi-chevron-up]="isExpanded(item)" aria-hidden="true"></i>
+              </button>
+              @if (isExpanded(item)) {
+                <div class="sidebar-children">
+                  @for (child of item.children; track child.id) {
+                    <button [routerLink]="routeFor(child)" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                      @if (isFontIcon(child.icon)) {
+                        <i [class]="child.icon" aria-hidden="true"></i>
+                      } @else {
+                        <iconify-icon [attr.icon]="child.icon" aria-hidden="true"></iconify-icon>
+                      }
+                      <span>{{ child.title }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            } @else if (item.route) {
+              <button [routerLink]="routeFor(item)" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                @if (isFontIcon(item.icon)) {
+                  <i [class]="item.icon" aria-hidden="true"></i>
+                } @else {
+                  <iconify-icon [attr.icon]="item.icon" aria-hidden="true"></iconify-icon>
+                }
+                <span>{{ item.title }}</span>
+              </button>
+            }
           }
         }
+
+        <div class="dash_userInfo_container">
+            <div class="dash_userInfo">
+                <span style="color: rgb(23, 189, 5); font-weight: bold; margin-bottom: 5px;">Welcome</span>
+                <span> <strong>User Name :</strong> {{userName}} - <strong>{{userRole}}</strong></span>
+            </div>
+            <div class="dash_icon">
+                <span>
+                    <iconify-icon icon="mdi:user"></iconify-icon>
+                </span>
+            </div>
+        </div>
+
       </aside>
 
-      <section class="content">
+      <main class="content">
         <router-outlet></router-outlet>
-      </section>
+      </main>
     </div>
+
   </div>
 </div>

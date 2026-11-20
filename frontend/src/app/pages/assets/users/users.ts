@@ -19,17 +19,22 @@ import { RoleModel } from '../../../models/role.model';
 import { RoleService } from '../../../services/role-service/role.service';
 import { PlayerService } from '../../../services/playerService/player';
 import { PlayerModel } from '../../../models/player/player.model';
+import { Checkbox } from 'primeng/checkbox';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [DatePipe, FormsModule, RegisterPopup, TableModule, InputTextModule, ButtonModule, IconFieldModule, InputIconModule, ConfirmDialogModule, DialogModule, FloatLabelModule, SelectModule, ToastModule],
+  imports: [DatePipe, FormsModule, RegisterPopup, TableModule, 
+    InputTextModule, ButtonModule, IconFieldModule, InputIconModule, 
+    ConfirmDialogModule, DialogModule, FloatLabelModule, SelectModule,
+    ToastModule, Checkbox],
   providers: [ConfirmationService, MessageService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './users.html',
   styleUrl: '../admin-screen/admin-screen/admin-screen.scss'
 })
 export class Users implements OnInit {
+
   users: UserModel[] = [];
   usersTotal = 0;
   usersPageSize = 5;
@@ -101,12 +106,25 @@ export class Users implements OnInit {
     this.userService.deleteUser(id).subscribe({ next: () => this.loadUsers(), error: error => this.showError(error, 'Unable to delete user.') });
   }
 
-  editUser(user: UserModel): void { this.selectedUser = { ...user, roleId: (user as any).roleId, playerId: user.playerId ?? null }; this.displayEditDialog = true; }
+  editUser(user: UserModel): void 
+  {
+    this.selectedUser = { ...user, roleId: (user as any).roleId, playerId: user.playerId ?? null }; 
+    this.displayEditDialog = true; 
+  }
 
-  get isEditingMember(): boolean { return this.roles.find(role => role.id === this.selectedUser.roleId)?.name?.toLowerCase() === 'member'; }
+  get isEditingMember(): boolean 
+  {
+    return this.roles.find(role => role.id === this.selectedUser.roleId)?.name?.toLowerCase() === 'member'; 
+  }
 
   private loadPlayers(): void {
-    this.playerService.getPlayers(1, 100).subscribe({ next: result => { this.players = result.items.filter(player => player.status === 'Active'); this.cdr.detectChanges(); } });
+    this.playerService.getPlayers(1, 100).subscribe(
+      {
+         next: result => {
+           this.players = result.items.filter(player => player.status === 'Active'); 
+           this.cdr.detectChanges(); 
+          } 
+      });
   }
 
   saveUser(): void {
@@ -118,6 +136,9 @@ export class Users implements OnInit {
   }
 
   private showError(error: any, fallback: string): void {
-    this.messageService.add({ severity: 'error', summary: 'Error', detail: error?.error?.message || fallback });
+    this.messageService.add(
+      { 
+        severity: 'error', summary: 'Error', detail: error?.error?.message || fallback 
+      });
   }
 }

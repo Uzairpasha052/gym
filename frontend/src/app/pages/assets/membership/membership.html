@@ -99,8 +99,8 @@
             <td>{{ membership.durationMonths }} months</td>
             <td>{{ membership.startDate | date:'dd MMM yyyy' }}</td>
             <td>{{ membership.endDate | date:'dd MMM yyyy' }}</td>
-            <td>{{ membership.discountAmount | number:'1.2-2' }}</td>
-            <td>{{ membership.finalAmount | number:'1.2-2' }}</td>
+            <td>{{ membership.discountAmount | number:'1.0-0' }}</td>
+            <td>{{ membership.finalAmount | number:'1.0-0' }}</td>
             <td><span class="status-badge" [class]="'status-badge status-' + membership.status.toLowerCase()">{{ membership.status }}</span></td>
           </tr>
         </ng-template>

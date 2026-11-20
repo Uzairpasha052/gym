@@ -29,7 +29,7 @@ public class UserRepository(AppDbContext context) : IUserRepository
 
         IQueryable<User> query = context.Users
         .AsNoTracking()
-        .Where(u => u.IsActive)
+        //.Where(u => u.IsActive)
         .Include(u => u.Role)
         .Include(u => u.Player);
 

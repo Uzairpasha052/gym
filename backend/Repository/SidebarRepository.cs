@@ -66,6 +66,50 @@ public class SidebarRepository : ISidebarRepository
             .ToListAsync();
     }
 
+    public async Task<List<SidebarMenu>> GetMenusForUserAsync(int roleId, int userId)
+    {
+        var menus = await _context.SidebarMenus
+            .AsNoTracking()
+            .Where(menu => menu.IsActive && !menu.IsDeleted)
+            .Include(menu => menu.RoleSidebarMenus)
+                .ThenInclude(assignment => assignment.Role)
+            .Include(menu => menu.UserSidebarMenus)
+                .ThenInclude(assignment => assignment.User)
+            .OrderBy(menu => menu.DisplayOrder)
+            .ThenBy(menu => menu.Id)
+            .ToListAsync();
+
+        var byId = menus.ToDictionary(menu => menu.Id);
+        var allowedIds = menus
+            .Where(menu => !string.IsNullOrWhiteSpace(menu.Route) && (menu.RoleSidebarMenus.Any(assignment =>
+                    assignment.RoleId == roleId && assignment.Role.IsActive && !assignment.Role.IsDeleted)
+                || menu.UserSidebarMenus.Any(assignment =>
+                    assignment.UserId == userId && assignment.User.IsActive && !assignment.User.IsDeleted)))
+            .Select(menu => menu.Id)
+            .ToHashSet();
+
+        // Keep a parent group visible whenever one of its pages is granted.
+        foreach (var menuId in allowedIds.ToList())
+        {
+            var current = byId[menuId];
+            while (current.ParentId.HasValue && byId.TryGetValue(current.ParentId.Value, out var parent))
+            {
+                allowedIds.Add(parent.Id);
+                current = parent;
+            }
+        }
+
+        return menus.Where(menu => allowedIds.Contains(menu.Id)).ToList();
+    }
+
+    public Task<List<SidebarMenu>> GetAllMenusAsync() => _context.SidebarMenus
+        .AsNoTracking()
+        .Where(menu => !menu.IsDeleted)
+        .OrderBy(menu => menu.ParentId)
+        .ThenBy(menu => menu.DisplayOrder)
+        .ThenBy(menu => menu.Id)
+        .ToListAsync();
+
     public async Task<SidebarMenu?> GetByIdAsync(int id)
     {
         return await _context.SidebarMenus
@@ -86,11 +130,22 @@ public class SidebarRepository : ISidebarRepository
         return await query.AnyAsync();
     }
 
+    public async Task<bool> DisplayOrderExistsAsync(int? parentId, int displayOrder, int? excludeId = null)
+    {
+        var query = _context.SidebarMenus.Where(menu =>
+            menu.ParentId == parentId && menu.DisplayOrder == displayOrder && !menu.IsDeleted);
+
+        if (excludeId.HasValue)
+            query = query.Where(menu => menu.Id != excludeId.Value);
+
+        return await query.AnyAsync();
+    }
+
     public async Task<bool> ParentExistsAsync(int parentId)
     {
         return await _context.SidebarMenus
             .AnyAsync(x => x.Id == parentId && x.ParentId == null &&
-                x.IsActive && !x.IsDeleted);
+                x.Route == string.Empty && x.IsActive && !x.IsDeleted);
     }
 
     public async Task<SidebarMenu> CreateAsync(SidebarMenu menu)
@@ -121,6 +176,11 @@ public class SidebarRepository : ISidebarRepository
             .ToListAsync();
     }
 
+    public async Task<List<int>> GetUserIdsByMenuIdAsync(int menuId) => await _context.UserSidebarMenus
+        .Where(assignment => assignment.SidebarMenuId == menuId)
+        .Select(assignment => assignment.UserId)
+        .ToListAsync();
+
     public async Task AssignRolesAsync(int menuId, List<int> roleIds)
     {
         var existingAssingnments = await _context.RoleSidebarMenus
@@ -140,6 +200,22 @@ public class SidebarRepository : ISidebarRepository
         await _context.RoleSidebarMenus.AddRangeAsync(newAssignments);
         await _context.SaveChangesAsync();
 
+    }
+
+    public async Task AssignUsersAsync(int menuId, List<int> userIds)
+    {
+        var existing = await _context.UserSidebarMenus
+            .Where(assignment => assignment.SidebarMenuId == menuId)
+            .ToListAsync();
+
+        _context.UserSidebarMenus.RemoveRange(existing);
+        var assignments = userIds.Distinct().Select(userId => new UserSidebarMenu
+        {
+            SidebarMenuId = menuId,
+            UserId = userId
+        });
+        await _context.UserSidebarMenus.AddRangeAsync(assignments);
+        await _context.SaveChangesAsync();
     }
 
     public async Task RemoveRoleAssignmentsAsync(int menuId)
@@ -175,6 +251,17 @@ public class SidebarRepository : ISidebarRepository
                 x.IsActive &&
                 !x.IsDeleted);
 
+        return count == distinctIds.Count;
+    }
+
+    public async Task<bool> UserIdsExistAsync(List<int> userIds)
+    {
+        var distinctIds = userIds.Distinct().ToList();
+        if (distinctIds.Count == 0)
+            return true;
+
+        var count = await _context.Users.CountAsync(user =>
+            distinctIds.Contains(user.Id) && user.IsActive && !user.IsDeleted);
         return count == distinctIds.Count;
     }
 

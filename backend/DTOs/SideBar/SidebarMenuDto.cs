@@ -16,7 +16,10 @@ public class SidebarMenuDto
 
     public bool IsActive { get; set; }
 
+    public bool IsGroup { get; set; }
+
     public List<int> RoleIds { get; set; } = new();
+    public List<int> UserIds { get; set; } = new();
 
     // This would maybe delete
     public List<SidebarMenuDto> Children { get; set; } = new();

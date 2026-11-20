@@ -135,6 +135,8 @@ public class UserService : IUserService
         user.Role = role;
         user.PlayerId = player?.Id;
         user.Player = player;
+        user.IsActive = dto.IsActive;
+        user.IsDeleted = !dto.IsActive;
 
         if (!await _repository.UpdateAsync(user)) return null;
         var result = MapToDto(user);
@@ -171,6 +173,7 @@ public class UserService : IUserService
         RoleName = user.Role?.Name ?? string.Empty,
         PlayerId = user.PlayerId,
         PlayerName = user.Player?.Name,
+        IsActive = user.IsActive,
         CreatedAt = user.CreatedAt
     };
 }

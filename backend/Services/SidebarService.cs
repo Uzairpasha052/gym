@@ -1,5 +1,6 @@
 ﻿
 using backend.DTOs.SideBar;
+using backend.Helper;
 using backend.Interface;
 using backend.Models;
 using backend.Repo_Interface;
@@ -9,10 +10,12 @@ namespace backend.Service;
 public class SidebarService : ISidebarService
 {
     private readonly ISidebarRepository _repository;
+    private readonly CurrentUserService _userService;
 
-    public SidebarService(ISidebarRepository sidebarRepository)
+    public SidebarService(ISidebarRepository sidebarRepository, CurrentUserService userService)
     {
         _repository = sidebarRepository;
+        _userService = userService;
     }
 
     public async Task<List<SidebarGroupDto>> GetParentMenusAsync(int roleId)
@@ -59,6 +62,39 @@ public class SidebarService : ISidebarService
         //    return rootMenus;
     }
 
+    public async Task<List<SidebarMenuDto>> GetMenuForUserAsync(int roleId, int userId)
+    {
+        var menus = await _repository.GetMenusForUserAsync(roleId, userId);
+        var groupIds = (await _repository.GetAllMenusAsync())
+            .Where(menu => menu.IsActive && menu.ParentId.HasValue)
+            .Select(menu => menu.ParentId!.Value)
+            .ToHashSet();
+        return menus.Select(menu =>
+        {
+            var dto = MapMenu(menu);
+            dto.IsGroup = groupIds.Contains(menu.Id);
+            return dto;
+        }).ToList();
+    }
+
+    public async Task<List<SidebarMenuDto>> GetAllMenusAsync()
+    {
+        var menus = await _repository.GetAllMenusAsync();
+        var results = new List<SidebarMenuDto>(menus.Count);
+        var groupIds = menus.Where(menu => menu.IsActive && menu.ParentId.HasValue)
+            .Select(menu => menu.ParentId!.Value)
+            .ToHashSet();
+        foreach (var menu in menus)
+        {
+            var dto = MapMenu(menu);
+            dto.IsGroup = groupIds.Contains(menu.Id);
+            dto.RoleIds = await _repository.GetRoleIdsByMenuIdAsync(menu.Id);
+            dto.UserIds = await _repository.GetUserIdsByMenuIdAsync(menu.Id);
+            results.Add(dto);
+        }
+        return results;
+    }
+
     public async Task<List<SidebarMenuDto>> GetChildMenusAsync(
         int roleId,
         int parentId)
@@ -67,15 +103,7 @@ public class SidebarService : ISidebarService
             roleId,
             parentId);
 
-        return menus.Select(x => new SidebarMenuDto
-        {
-            Id = x.Id,
-            Title = x.Title,
-            Route = x.Route,
-            Icon = x.Icon,
-            ParentId = x.ParentId,
-            DisplayOrder = x.DisplayOrder
-        }).ToList();
+        return menus.Select(MapMenu).ToList();
     }
 
     public async Task<SidebarMenuDto?> GetByIdAsync(int id)
@@ -85,17 +113,10 @@ public class SidebarService : ISidebarService
         if (menu == null)
             return null;
 
-        return new SidebarMenuDto
-        {
-            Id = menu.Id,
-            Title = menu.Title,
-            Route = menu.Route,
-            Icon = menu.Icon,
-            ParentId = menu.ParentId,
-            DisplayOrder = menu.DisplayOrder,
-            IsActive = menu.IsActive,
-            RoleIds = await _repository.GetRoleIdsByMenuIdAsync(menu.Id)
-        };
+        var dto = MapMenu(menu);
+        dto.RoleIds = await _repository.GetRoleIdsByMenuIdAsync(menu.Id);
+        dto.UserIds = await _repository.GetUserIdsByMenuIdAsync(menu.Id);
+        return dto;
     }
 
     public async Task<(bool Success, string Message, int? Id)> CreateAsync(
@@ -104,23 +125,34 @@ public class SidebarService : ISidebarService
         if (string.IsNullOrWhiteSpace(dto.Title))
             return (false, "Title is required.", null);
 
-        if (string.IsNullOrWhiteSpace(dto.Route))
-            return (false, "Route is required.", null);
+        if (dto.ParentId.HasValue && string.IsNullOrWhiteSpace(dto.Route))
+            return (false, "A page under a group must have an Angular route.", null);
 
         dto.Title = dto.Title.Trim();
-        dto.Route = dto.Route.Trim();
+        dto.Route = dto.Route?.Trim() ?? string.Empty;
 
-        if (await _repository.RouteExistsAsync(dto.Route))
+        if (dto.DisplayOrder < 1)
+            return (false, "Display order must be at least 1.", null);
+        if (await _repository.DisplayOrderExistsAsync(dto.ParentId, dto.DisplayOrder))
+            return (false, "That display order is already used by a sibling item.", null);
+
+        if (!string.IsNullOrWhiteSpace(dto.Route) && await _repository.RouteExistsAsync(dto.Route))
             return (false, "This route already exists.", null);
 
         if (dto.ParentId.HasValue)
         {
             if (!await _repository.ParentExistsAsync(dto.ParentId.Value))
-                return (false, "Selected parent does not exist or is inactive.", null);
+                return (false, "Selected parent must be an active top-level group with no route.", null);
         }
 
+        dto.RoleIds ??= [];
+        dto.UserIds ??= [];
+        if (string.IsNullOrWhiteSpace(dto.Route) && (dto.RoleIds.Count > 0 || dto.UserIds.Count > 0))
+            return (false, "Sidebar groups inherit visibility from their assigned child pages.", null);
         if (!await _repository.RoleIdsExistAsync(dto.RoleIds))
             return (false, "One or more selected roles are invalid or inactive.", null);
+        if (!await _repository.UserIdsExistAsync(dto.UserIds))
+            return (false, "One or more selected users are invalid or inactive.", null);
 
         var menu = new SidebarMenu
         {
@@ -130,7 +162,10 @@ public class SidebarService : ISidebarService
             ParentId = dto.ParentId,
             DisplayOrder = dto.DisplayOrder,
             IsActive = true,
-            IsDeleted = false
+            IsDeleted = false,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = _userService.UserId
+            
         };
 
         var created = await _repository.CreateAsync(menu);
@@ -138,6 +173,7 @@ public class SidebarService : ISidebarService
         await _repository.AssignRolesAsync(
             created.Id,
             dto.RoleIds.Distinct().ToList());
+        await _repository.AssignUsersAsync(created.Id, dto.UserIds.Distinct().ToList());
 
         return (true, "Sidebar menu created successfully.", created.Id);
     }
@@ -154,13 +190,18 @@ public class SidebarService : ISidebarService
         if (string.IsNullOrWhiteSpace(dto.Title))
             return (false, "Title is required.");
 
-        if (string.IsNullOrWhiteSpace(dto.Route))
-            return (false, "Route is required.");
+        if (dto.ParentId.HasValue && string.IsNullOrWhiteSpace(dto.Route))
+            return (false, "A page under a group must have an Angular route.");
 
         dto.Title = dto.Title.Trim();
-        dto.Route = dto.Route.Trim();
+        dto.Route = dto.Route?.Trim() ?? string.Empty;
 
-        if (await _repository.RouteExistsAsync(dto.Route, id))
+        if (dto.DisplayOrder < 1)
+            return (false, "Display order must be at least 1.");
+        if (await _repository.DisplayOrderExistsAsync(dto.ParentId, dto.DisplayOrder, id))
+            return (false, "That display order is already used by a sibling item.");
+
+        if (!string.IsNullOrWhiteSpace(dto.Route) && await _repository.RouteExistsAsync(dto.Route, id))
             return (false, "This route already exists.");
 
         if (dto.ParentId == id)
@@ -169,11 +210,17 @@ public class SidebarService : ISidebarService
         if (dto.ParentId.HasValue)
         {
             if (!await _repository.ParentExistsAsync(dto.ParentId.Value))
-                return (false, "Selected parent does not exist or is inactive.");
+                return (false, "Selected parent must be an active top-level group with no route.");
         }
 
+        dto.RoleIds ??= [];
+        dto.UserIds ??= [];
+        if (string.IsNullOrWhiteSpace(dto.Route) && (dto.RoleIds.Count > 0 || dto.UserIds.Count > 0))
+            return (false, "Sidebar groups inherit visibility from their assigned child pages.");
         if (!await _repository.RoleIdsExistAsync(dto.RoleIds))
             return (false, "One or more selected roles are invalid or inactive.");
+        if (!await _repository.UserIdsExistAsync(dto.UserIds))
+            return (false, "One or more selected users are invalid or inactive.");
 
         menu.Title = dto.Title;
         menu.Route = dto.Route;
@@ -181,12 +228,15 @@ public class SidebarService : ISidebarService
         menu.ParentId = dto.ParentId;
         menu.DisplayOrder = dto.DisplayOrder;
         menu.IsActive = dto.IsActive;
+        menu.UpdatedAt = DateTime.UtcNow;
+        menu.UpdatedBy = _userService.UserId;
 
         await _repository.UpdateAsync(menu);
 
         await _repository.AssignRolesAsync(
             menu.Id,
             dto.RoleIds.Distinct().ToList());
+        await _repository.AssignUsersAsync(menu.Id, dto.UserIds.Distinct().ToList());
 
         return (true, "Sidebar menu updated successfully.");
     }
@@ -204,9 +254,22 @@ public class SidebarService : ISidebarService
         await _repository.SoftDeleteAsync(menu);
 
         await _repository.RemoveRoleAssignmentsAsync(id);
+        await _repository.AssignUsersAsync(id, []);
 
         return (true, "Sidebar menu deleted successfully.");
     }
+
+    private static SidebarMenuDto MapMenu(SidebarMenu menu) => new()
+    {
+        Id = menu.Id,
+        Title = menu.Title,
+        Route = menu.Route,
+        Icon = menu.Icon,
+        ParentId = menu.ParentId,
+        DisplayOrder = menu.DisplayOrder,
+        IsActive = menu.IsActive,
+        IsGroup = menu.Children.Count > 0
+    };
 
 
     //private static void SortMenus(List<SidebarMenuDto> menus)

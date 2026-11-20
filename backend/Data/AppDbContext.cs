@@ -31,6 +31,8 @@ public class AppDbContext : DbContext {
 
     public DbSet<RoleSidebarMenu> RoleSidebarMenus { get; set; }
 
+    public DbSet<UserSidebarMenu> UserSidebarMenus { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -178,7 +180,7 @@ public class AppDbContext : DbContext {
             entity.HasOne(x => x.Parent)
                 .WithMany(x => x.Children)
                 .HasForeignKey(x => x.ParentId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(x => new { x.ParentId, x.DisplayOrder });
         });
@@ -226,6 +228,21 @@ public class AppDbContext : DbContext {
 
             entity.HasIndex(x => new { x.RoleId, x.SidebarMenuId })
                 .IsUnique();
+        });
+
+        modelBuilder.Entity<UserSidebarMenu>(entity =>
+        {
+            entity.ToTable("UserSidebarMenus");
+            entity.HasKey(x => x.Id);
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.SidebarMenuAssignments)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(x => x.SidebarMenu)
+                .WithMany(x => x.UserSidebarMenus)
+                .HasForeignKey(x => x.SidebarMenuId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => new { x.UserId, x.SidebarMenuId }).IsUnique();
         });
         //modelBuilder.Entity<RoleSidebarMenu>(entity =>
         //{

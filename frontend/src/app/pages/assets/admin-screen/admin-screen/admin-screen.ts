@@ -1,61 +1,110 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ChangeDetectorRef, Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SidebarMenuItem } from '../../../../models/sidebar-menu.model';
 import { SidebarService } from '../../../../services/sidebarService/sidebar.service';
+import { Auth } from '../../../../services/authService/auth';
+
+interface SidebarNode extends SidebarMenuItem {
+  children: SidebarNode[];
+  isGroup: boolean;
+}
 
 @Component({
   selector: 'app-admin-screen',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './admin-screen.html',
   styleUrl: './admin-screen.scss'
 })
 export class AdminScreen implements OnInit {
-  menuItems: SidebarMenuItem[] = [];
+  menuItems: SidebarNode[] = [];
+  expandedMenuIds = new Set<number>();
   loadingMenu = true;
   menuError = '';
 
-  constructor(private sidebar: SidebarService, private cdr: ChangeDetectorRef) {}
+  userName: string = '';
+  userRole: string = '';
+
+  constructor(
+    private sidebar: SidebarService,
+    private auth: Auth,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
-    this.sidebar.getParentMenus().subscribe({
-      next: parents => {
-        const adminParent = parents.find(menu => this.normalizeRoute(menu.route) === '/admin');
-
-        if (!adminParent) {
-          this.finishWithError('No Admin menu is assigned to this role.');
-          return;
+    this.sidebar.getMyMenu().subscribe({
+      next: items => {
+        this.menuItems = this.buildMenuTree(items);
+        const currentUrl = this.normalizeRoute(this.router.url);
+        for (const group of this.menuItems) {
+          if (group.children.some(child => this.normalizeRoute(child.route) === currentUrl)) {
+            this.expandedMenuIds.add(group.id);
+          }
         }
-
-        this.sidebar.getChildMenus(adminParent.id).subscribe({
-          next: children => {
-            this.menuItems = children;
-            this.loadingMenu = false;
-            this.cdr.detectChanges();
-          },
-          error: error => this.finishWithError(error?.error?.message || 'Unable to load Admin pages.')
-        });
+        this.loadingMenu = false;
+        this.cdr.detectChanges();
       },
-      error: error => this.finishWithError(error?.error?.message || 'Unable to load navigation.')
+      error: error => {
+        this.menuError = error?.error?.message || 'Unable to load pages assigned to this account.';
+        this.loadingMenu = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 
-  private normalizeRoute(route: string): string {
-    const normalized = `/${route.trim().replace(/^\/+|\/+$/g, '')}`;
-    return normalized === '/' ? '/' : normalized.toLowerCase();
+  private buildMenuTree(items: SidebarMenuItem[]): SidebarNode[] {
+    const nodes = new Map<number, SidebarNode>();
+    for (const item of items) nodes.set(item.id, { ...item, children: [], isGroup: item.isGroup ?? false });
+
+    const roots: SidebarNode[] = [];
+    for (const node of nodes.values()) {
+      const parent = node.parentId == null ? undefined : nodes.get(node.parentId);
+      if (parent) parent.children.push(node);
+      else roots.push(node);
+    }
+
+    const sort = (itemsToSort: SidebarNode[]) => {
+      itemsToSort.sort((a, b) => a.displayOrder - b.displayOrder || a.id - b.id);
+      itemsToSort.forEach(item => sort(item.children));
+    };
+    sort(roots);
+    return roots.filter(item => item.children.length > 0 || !item.isGroup);
   }
 
   routeFor(item: SidebarMenuItem): string {
     const route = this.normalizeRoute(item.route);
-    return route === '/admin' ? '/users'
-      : route.startsWith('/admin/') ? route.slice('/admin'.length)
-      : route;
+    return route.startsWith('/admin/') ? route.slice('/admin'.length) : route;
   }
 
-  private finishWithError(message: string): void {
-    this.menuError = message;
-    this.loadingMenu = false;
-    this.cdr.detectChanges();
+  normalizeRoute(route: string): string {
+    const path = (route || '').split(/[?#]/, 1)[0].trim().replace(/^\/+|\/+$/g, '');
+    const normalized = `/${path}`.toLowerCase();
+    const withoutLegacyAdmin = normalized.startsWith('/admin/') ? normalized.slice('/admin'.length) : normalized;
+    return withoutLegacyAdmin === '/homescreen' ? '/take-attendance' : withoutLegacyAdmin;
+  }
+
+  isFontIcon(icon: string): boolean {
+    return icon.startsWith('fa-') || icon.startsWith('pi ');
+  }
+
+  toggleGroup(item: SidebarNode): void {
+    if (this.expandedMenuIds.has(item.id)) this.expandedMenuIds.delete(item.id);
+    else this.expandedMenuIds.add(item.id);
+  }
+
+  isExpanded(item: SidebarNode): boolean {
+    return this.expandedMenuIds.has(item.id);
+  }
+
+  isGroupActive(item: SidebarNode): boolean {
+    const currentUrl = this.normalizeRoute(this.router.url);
+    return item.children.some(child => this.normalizeRoute(child.route) === currentUrl);
+  }
+
+  logout(): void {
+    this.auth.logout();
   }
 }

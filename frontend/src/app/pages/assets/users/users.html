@@ -1,168 +1,201 @@
 <p-toast position="top-right"></p-toast>
-    <!-- Register User -->
-    <div class="add-user-container">
-        <button (click)="openRegister()" class="add-user-btn">
-            <iconify-icon icon="mdi:account-plus-outline" class="register_logo"></iconify-icon>
-            Register User
-        </button>
-        @if(showRegister)
-        {
-            <app-register-popup
-                (close)="closeRegister()">
-            </app-register-popup>
-        }
-    </div>
 
-    <!-- display User -->
-    <div class="user_pdata">
-        <h2>Users List</h2>
-        <p-confirmDialog></p-confirmDialog>
-        <p-table
-            #dt
-            [value]="users"
-            [lazy]="true"
-            [paginator]="true"
-            [rows]="5"
-            [totalRecords]="usersTotal"
-            (onLazyLoad)="onPage($event)"
-            [rowsPerPageOptions]="[5,10,15]"
-            [globalFilterFields]="['fullName', 'email', 'roleName']"
-            [tableStyle]="{'min-width':'60rem'}">
+<!-- <div class="add-user-container">
+    <button (click)="openRegister()" class="add-user-btn">
+        <iconify-icon icon="mdi:account-plus-outline" class="register_logo"></iconify-icon>
+        Register User
+    </button>
+    @if(showRegister)
+    {
+        <app-register-popup
+            (close)="closeRegister()">
+        </app-register-popup>
+    }
+</div> -->
+<header class="user-header">
 
-            <ng-template pTemplate="caption">
-                <p-iconfield>
-                    <p-inputicon class="pi pi-search"></p-inputicon>
+<div>
+    <h2>User Control</h2>
+    <p>Manage Users to maintain the flow of Gym.</p>
+</div>
 
+<button pButton type="button" label="Register User" icon="pi pi-user-plus"
+    (click)="openRegister()">
+</button>
+@if(showRegister)
+{
+    <app-register-popup
+        (close)="closeRegister()">
+    </app-register-popup>
+}
+
+</header>
+
+<!-- display User -->
+<div class="user_pdata">
+    <!-- <h2>Users List</h2> -->
+    <p-confirmDialog></p-confirmDialog>
+    <p-table
+        #dt
+        [value]="users"
+        [lazy]="true"
+        [paginator]="true"
+        [rows]="5"
+        [totalRecords]="usersTotal"
+        (onLazyLoad)="onPage($event)"
+        [rowsPerPageOptions]="[5,10,15]"
+        [globalFilterFields]="['fullName', 'email', 'roleName']"
+        [tableStyle]="{'min-width':'60rem'}">
+
+        <ng-template pTemplate="caption">
+            <h2>Users List</h2>
+
+            <p-iconfield>
+                <p-inputicon class="pi pi-search"></p-inputicon>
+
+                <input
+                    pInputText
+                    type="text"
+                    placeholder="Search..."
+                    (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
+            </p-iconfield>
+        </ng-template>
+        
+        <br><br>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="fullName">
+                    Name
+                    <p-sortIcon field="fullName"></p-sortIcon>
+                </th>
+                <th pSortableColumn="email">
+                    Email
+                    <p-sortIcon field="email"></p-sortIcon>
+                </th>
+                <th pSortableColumn="roleName">
+                    Role
+                    <p-sortIcon field="roleName"></p-sortIcon>
+                </th>
+                <th pSortableColumn="createdAt">
+                    Created At
+                    <p-sortIcon field="createdAt"></p-sortIcon>
+                </th>
+                <th pSortableColumn="status">
+                    Status
+                    <p-sortIcon field="status"></p-sortIcon>
+                </th>
+                <th>
+                    Actions
+                </th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-user>
+            <tr>
+                <td>{{ user.fullName }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.roleName }}</td>
+                <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
+                <td>{{ user.isActive }}</td>
+                <td>
+                    <div class="action-btns">
+                        <button pButton icon="pi pi-pencil" severity="info" 
+                                (click)="editUser(user)" [rounded]="true" [text]="true"></button>
+                        <button pButton icon="pi pi-trash" severity="danger" 
+                                (click)="confirmDelete(user)" [rounded]="true" [text]="true"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+    </p-table>
+
+    <p-dialog
+        header="Edit User"
+        [(visible)]="displayEditDialog"
+        [modal]="true"
+        [resizable]="false"
+        [style]="{ width: '30rem'}">
+
+        <div class="edit-user-form">
+
+            <div class="field">
+                <p-floatlabel variant="on">
                     <input
                         pInputText
-                        type="text"
-                        placeholder="Search..."
-                        (input)="dt.filterGlobal($any($event.target).value, 'contains')" />
-                </p-iconfield>
-            </ng-template>
-            
-            <br><br>
-
-            <ng-template pTemplate="header">
-                <tr>
-                    <th pSortableColumn="fullName">
-                        Name
-                        <p-sortIcon field="fullName"></p-sortIcon>
-                    </th>
-                    <th pSortableColumn="email">
-                        Email
-                        <p-sortIcon field="email"></p-sortIcon>
-                    </th>
-                    <th pSortableColumn="roleName">
-                        Role
-                        <p-sortIcon field="roleName"></p-sortIcon>
-                    </th>
-                    <th pSortableColumn="createdAt">
-                        Created At
-                        <p-sortIcon field="createdAt"></p-sortIcon>
-                    </th>
-                    <th>
-                        Actions
-                    </th>
-                </tr>
-            </ng-template>
-
-            <ng-template pTemplate="body" let-user>
-                <tr>
-                    <td>{{ user.fullName }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>{{ user.roleName }}</td>
-                    <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
-                    <td>
-                        <div class="action-btns">
-                            <button pButton icon="pi pi-pencil" severity="info" 
-                                    (click)="editUser(user)" [rounded]="true" [text]="true"></button>
-                            <button pButton icon="pi pi-trash" severity="danger" 
-                                    (click)="confirmDelete(user)" [rounded]="true" [text]="true"></button>
-                        </div>
-                    </td>
-                </tr>
-            </ng-template>
-
-        </p-table>
-
-        <p-dialog
-            header="Edit User"
-            [(visible)]="displayEditDialog"
-            [modal]="true"
-            [resizable]="false"
-            [style]="{ width: '30rem'}">
-
-            <div class="edit-user-form">
-
-                <div class="field">
-                    <p-floatlabel variant="on">
-                        <input
-                            pInputText
-                            id="name"
-                            class="w-full"
-                            [(ngModel)]="selectedUser.fullName" />
-                        <label for="name">Full Name</label>
-                    </p-floatlabel>
-                </div>
-
-                <div class="field">
-                    <p-floatlabel variant="on">
-                        <input
-                            pInputText
-                            id="email"
-                            class="w-full"
-                            [(ngModel)]="selectedUser.email" />
-                        <label for="email">Email</label>
-                    </p-floatlabel>
-                </div>
-
-                <div class="field">
-                    <p-floatlabel variant="on">
-                        <p-select
-                            class="w-full"
-                            inputId="role"
-                            [options]="roles"
-                            optionLabel="name"
-                            optionValue="id"
-                            [(ngModel)]="selectedUser.roleId"
-                            (ngModelChange)="selectedUser.playerId = null"
-                            [appendTo]="'body'">
-                        </p-select>
-                        <label for="role">Role</label>
-                    </p-floatlabel>
-                </div>
-
-                @if (isEditingMember) {
-                    <div class="field">
-                        <p-floatlabel variant="on">
-                            <p-select class="w-full" inputId="playerProfile" [options]="players" optionLabel="name" optionValue="id" [(ngModel)]="selectedUser.playerId" [appendTo]="'body'"></p-select>
-                            <label for="playerProfile">Linked player profile</label>
-                        </p-floatlabel>
-                    </div>
-                }
-
+                        id="name"
+                        class="w-full"
+                        [(ngModel)]="selectedUser.fullName" />
+                    <label for="name">Full Name</label>
+                </p-floatlabel>
             </div>
 
-            <ng-template pTemplate="footer">
+            <div class="field">
+                <p-floatlabel variant="on">
+                    <input
+                        pInputText
+                        id="email"
+                        class="w-full"
+                        [(ngModel)]="selectedUser.email" />
+                    <label for="email">Email</label>
+                </p-floatlabel>
+            </div>
 
-                <button
-                    pButton
-                    label="Cancel"
-                    severity="secondary"
-                    (click)="displayEditDialog=false">
-                </button>
+            <div class="field">
+                <p-floatlabel variant="on">
+                    <p-select
+                        class="w-full"
+                        inputId="role"
+                        [options]="roles"
+                        optionLabel="name"
+                        optionValue="id"
+                        [(ngModel)]="selectedUser.roleId"
+                        (ngModelChange)="selectedUser.playerId = null"
+                        [appendTo]="'body'">
+                    </p-select>
+                    <label for="role">Role</label>
+                </p-floatlabel>
+            </div>
 
-                <button
-                    pButton
-                    label="Save"
-                    icon="pi pi-check"
-                    (click)="saveUser()">
-                </button>
+            <div class="field-checkbox" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <p-checkbox inputId="IsActive" [binary]="true" [(ngModel)]="selectedUser.isActive"></p-checkbox>
+                <label for="roleIsActive">Active</label>
+            </div>
 
-            </ng-template>
+            @if (isEditingMember) {
+                <div class="field">
+                    <p-floatlabel variant="on">
+                        <p-select class="w-full" inputId="playerProfile" [options]="players" 
+                            optionLabel="name" optionValue="id" [(ngModel)]="selectedUser.playerId" 
+                            [appendTo]="'body'">
+                        </p-select>
+                        <label for="playerProfile">Linked player profile</label>
+                    </p-floatlabel>
+                </div>
+            }
 
-        </p-dialog>
-    </div>
+        </div>
+
+        <ng-template pTemplate="footer">
+
+            <button
+                pButton
+                label="Cancel"
+                severity="secondary"
+                (click)="displayEditDialog=false">
+            </button>
+
+            <button
+                pButton
+                label="Save"
+                icon="pi pi-check"
+                (click)="saveUser()">
+            </button>
+
+        </ng-template>
+
+    </p-dialog>
+</div>
 
 

@@ -10,4 +10,5 @@ public class UpdateUserDto
 
     public int? PlayerId { get; set; }
 
+    public bool IsActive { get; set; }
 }

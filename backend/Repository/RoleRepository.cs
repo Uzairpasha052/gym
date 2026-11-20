@@ -14,7 +14,7 @@ public class RoleRepository : IRoleRepository
     { 
         return _context.Roles
             .AsNoTracking()
-            .Where(u => u.IsActive == true)
+            //.Where(u => u.IsActive == true)
             .OrderBy(r => r.Name)
             .ToListAsync(); 
     }

@@ -1,21 +1,22 @@
 .membership-page {
   display: grid;
-  gap: 1.25rem;
-  padding: 1.5rem;
+  gap: 1rem;
+  padding: 0;
 }
 
 .membership-page-header h1,
-.card-heading h2 { margin: 0; color: #172033; }
+.card-heading h2 { margin: 0; color: #1f2937; font-size: 1.5rem; font-weight: 600; }
+
+.card-heading h2 { font-size: 1.125rem; }
 
 .membership-page-header p,
 .card-heading p { margin: .4rem 0 0; color: #667085; }
 
 .membership-card {
-  padding: 1.35rem;
-  border: 1px solid #e5eaf1;
-  border-radius: 14px;
+  padding: 1.25rem;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
   background: #fff;
-  box-shadow: 0 3px 14px rgb(20 35 60 / 6%);
 }
 
 .card-heading { margin-bottom: 1.15rem; }
@@ -37,7 +38,6 @@
 .status-cancelled { background: #fef3f2; color: #b42318; }
 
 @media (max-width: 700px) {
-  .membership-page { padding: 1rem .5rem; }
   .membership-form-grid { grid-template-columns: 1fr; }
   .history-heading { align-items: flex-start; flex-direction: column; }
 }

@@ -13,6 +13,7 @@ public class CreateSidebarMenuDto
     public int DisplayOrder { get; set; }
 
     public List<int> RoleIds { get; set; } = new();
+    public List<int> UserIds { get; set; } = new();
 
 }
 

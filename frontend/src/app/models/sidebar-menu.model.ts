@@ -7,6 +7,8 @@ export interface SidebarMenuItem {
   parentId?: number | null;
   isActive?: boolean;
   roleIds?: number[];
+  userIds?: number[];
+  isGroup?: boolean;
 }
 
 export interface SidebarMenuCreateRequest {
@@ -16,6 +18,7 @@ export interface SidebarMenuCreateRequest {
   parentId: number | null;
   displayOrder: number;
   roleIds: number[];
+  userIds: number[];
 }
 
 export interface SidebarMenuUpdateRequest extends SidebarMenuCreateRequest {

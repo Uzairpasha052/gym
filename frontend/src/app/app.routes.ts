@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
-import { Dashboard } from './pages/dashboard/dashboard/dashboard';
 import { authGuard } from './guard/auth-guard/auth-guard';
-import { adminGuard } from './guard/admin-guard/admin-guard';
+import { sidebarPageGuard } from './guard/sidebar-page-guard/sidebar-page-guard';
 import { HomeScreen } from './pages/assets/home-screen/home-screen';
 import { AdminScreen } from './pages/assets/admin-screen/admin-screen/admin-screen';
 import { CashIn } from './pages/assets/cashIn/cash-in';
@@ -15,11 +14,15 @@ import { AuditLog } from './pages/assets/audit-log/audit-log';
 import { Configuration } from './pages/assets/configuration/configuration';
 import { Membership } from './pages/assets/membership/membership';
 import { ExpiringMembers } from './pages/assets/expiring-members/expiring-members';
+import { Dashboard } from './pages/dashboard/dashboard/dashboard';
 
 export const routes: Routes = [
   { path: '', component: NLogin },
-  { path: 'dashboard', component: Dashboard, canActivate: [authGuard] },
-  { path: 'homeScreen', component: HomeScreen, canActivate: [authGuard] },
+  // Reserve the Dashboard component for later; use AdminScreen as the current landing page.
+  { path: 'dashboard', redirectTo: 'users', pathMatch: 'full' },
+  // Keep the attendance URL inside the AdminScreen layout below.
+
+  { path: 'extra', component: Dashboard},
 
   // Compatibility redirects for URLs that included the old /admin prefix.
   { path: 'admin', redirectTo: 'users', pathMatch: 'full' },
@@ -45,16 +48,19 @@ export const routes: Routes = [
   },
 
   // Legacy dashboard entry points.
-  { path: 'take-attendance', redirectTo: 'homeScreen', pathMatch: 'full' },
+//   { path: 'take-attendance', redirectTo: 'homeScreen', pathMatch: 'full' },
   { path: 'adminScreen', redirectTo: 'users', pathMatch: 'full' },
   { path: 'cashScreen', redirectTo: 'cash/in', pathMatch: 'full' },
 
   {
     path: '',
     component: AdminScreen,
-    canActivate: [adminGuard],
+    canActivate: [authGuard],
+    canActivateChild: [sidebarPageGuard],
     children: [
       { path: '', redirectTo: 'users', pathMatch: 'full' },
+      { path: 'take-attendance', component: HomeScreen },
+      { path: 'homeScreen', redirectTo: 'take-attendance', pathMatch: 'full' },
       { path: 'users', component: Users },
       { path: 'attendance', component: AttendancePage },
       { path: 'players', component: PlayerRegister },
@@ -67,11 +73,11 @@ export const routes: Routes = [
         path: 'cash',
         children: [
           { path: 'in', component: CashIn },
-          { path: 'out', component: CashOut }
+          { path: 'out', component: CashOut }/*  */
         ]
       }
     ]
   },
 
-  { path: '**', redirectTo: 'dashboard' }
+  { path: '**', redirectTo: 'users' }
 ];

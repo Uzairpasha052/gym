@@ -41,7 +41,7 @@ export class NLogin {
         }
 
         this.sucmsg = 'Login Success'
-        this.router.navigate(['/dashboard'])
+        this.router.navigate(['/users'])
       },
       error: (error) => {
         // console.error(error);

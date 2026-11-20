@@ -5,13 +5,20 @@
   <header class="configuration-header">
     <div>
       <h2>Configuration</h2>
-      <p>Manage roles available to users in this gym.</p>
+      <p>Manage Roles and Routes in this Gym.</p>
     </div>
-    <button pButton type="button" label="Add Role" icon="pi pi-plus" (click)="openCreate()"></button>
+    <!-- <button pButton type="button" label="Add Role" icon="pi pi-plus" (click)="openCreate()"></button> -->
   </header>
 
   <div class="role-table-card">
-    <h3>Roles</h3>
+    <!-- <h3>Roles</h3> -->
+    <header class="sidebar-routes-header">
+      <div>
+        <h3>Roles</h3>
+        <!-- <p>Create dashboard buttons and the pages shown inside their sidebars.</p> -->
+      </div>
+      <button pButton type="button" label="Add Role" icon="pi pi-plus" (click)="openCreate()"></button>
+    </header>
     @if (loadError) { <p class="role-load-error" role="alert">{{ loadError }}</p> }
     <p-table [value]="roles" [loading]="loading" [tableStyle]="{'min-width':'35rem'}">
       <ng-template pTemplate="header">
@@ -19,6 +26,7 @@
           <th>Role Id</th>
           <th>Role Name</th>
           <th>Created</th>
+          <th>Status</th>
           <th>Actions</th>
         </tr>
       </ng-template>
@@ -27,6 +35,7 @@
           <td>{{ role.id }}</td>
           <td>{{ role.name }}</td>
           <td>{{ role.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td>{{ role.isActive }}</td>
           <td class="role-actions">
             <button pButton type="button" icon="pi pi-pencil" severity="info" [rounded]="true" [text]="true" aria-label="Edit role" (click)="openEdit(role)"></button>
             <button pButton type="button" icon="pi pi-trash" severity="danger" [rounded]="true" [text]="true" aria-label="Delete role" (click)="confirmDelete(role)"></button>
@@ -37,13 +46,14 @@
     </p-table>
   </div>
 
-  <div class="role-table-card sidebar-routes-card">
+  <div class="role-table-card ">
+    <!-- sidebar-routes-card -->
     <header class="sidebar-routes-header">
       <div>
         <h3>Sidebar Routes</h3>
-        <p>Create dashboard buttons and the pages shown inside their sidebars.</p>
+        <p>Create route-free group headings and assign each page to roles or individual users.</p>
       </div>
-      <button pButton type="button" label="Add Route" icon="pi pi-plus" (click)="openCreateSidebarMenu()"></button>
+      <button pButton type="button" label="Add Item" icon="pi pi-plus" (click)="openCreateSidebarMenu()"></button>
     </header>
     @if (sidebarMenusError) { <p class="role-load-error" role="alert">{{ sidebarMenusError }}</p> }
     <p-table [value]="sidebarMenus" [loading]="sidebarMenusLoading" [tableStyle]="{'min-width':'48rem'}">
@@ -51,25 +61,27 @@
         <tr>
           <th>Title</th>
           <th>Route</th>
-          <th>Parent</th>
+          <th>Type / Group</th>
           <th>Icon</th>
           <th>Order</th>
+          <th>Access</th>
           <th>Actions</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-menu>
         <tr>
-          <td>{{ menu.title }}</td>
-          <td><code>{{ menu.route }}</code></td>
+          <td><strong>{{ menu.title }}</strong></td>
+          <td>@if (menu.route) { <code>{{ menu.route }}</code> } @else { <span class="group-badge">Group heading</span> }</td>
           <td>{{ parentTitle(menu) }}</td>
           <td>{{ menu.icon }}</td>
           <td>{{ menu.displayOrder }}</td>
+          <td>{{ accessSummary(menu) }}</td>
           <td>
             <button pButton type="button" icon="pi pi-pencil" severity="info" [rounded]="true" [text]="true" [attr.aria-label]="'Edit ' + menu.title" (click)="openEditSidebarMenu(menu)"></button>
           </td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage"><tr><td colspan="6">No sidebar routes found.</td></tr></ng-template>
+      <ng-template pTemplate="emptymessage"><tr><td colspan="7">No sidebar items found.</td></tr></ng-template>
     </p-table>
   </div>
 </section>
@@ -78,6 +90,13 @@
   <div class="role-form">
     <label for="roleName">Role name</label>
     <input pInputText id="roleName" [(ngModel)]="roleName" maxlength="100" (keyup.enter)="saveRole()" />
+    
+    @if(editingRole){
+      <div class="field-checkbox" style="margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <p-checkbox inputId="roleIsActive" [binary]="true" [(ngModel)]="roleIsActive"></p-checkbox>
+        <label for="roleIsActive">Active</label>
+      </div>
+    }
   </div>
   <ng-template pTemplate="footer">
     <button pButton type="button" label="Cancel" severity="secondary" (click)="dialogVisible=false"></button>
@@ -85,52 +104,75 @@
   </ng-template>
 </p-dialog>
 
-<p-dialog [header]="editingSidebarMenu ? 'Edit Sidebar Route' : 'Add Sidebar Route'" [(visible)]="sidebarDialogVisible" [modal]="true" [resizable]="false" [style]="{width:'min(42rem, 95vw)'}">
+<p-dialog [header]="editingSidebarMenu ? 'Edit Sidebar Item' : 'Add Sidebar Item'" [(visible)]="sidebarDialogVisible" [modal]="true" [resizable]="false" [style]="{width:'min(54rem, 95vw)'}">
   <div class="sidebar-route-form">
+    <div class="form-intro">
+      <span class="form-step">Sidebar item</span>
+      <p>A group is a top-level heading that expands. A page needs an Angular route and can be placed inside a group.</p>
+    </div>
     <div class="sidebar-route-field">
       <label for="sidebarTitle">Title</label>
-      <input pInputText id="sidebarTitle" [(ngModel)]="sidebarForm.title" maxlength="100" />
+      <input pInputText id="sidebarTitle" [(ngModel)]="sidebarForm.title" maxlength="100" placeholder="e.g. Cash" />
     </div>
     <div class="sidebar-route-field">
-      <label for="sidebarRoute">Angular route</label>
-      <input pInputText id="sidebarRoute" [(ngModel)]="sidebarForm.route" maxlength="200" placeholder="/users" />
-      <small>Child routes are relative to their selected parent. For example, use /cash/in under Admin.</small>
-    </div>
-    <div class="sidebar-route-field">
-      <label for="sidebarIcon">Icon class or Iconify name</label>
-      <input pInputText id="sidebarIcon" [(ngModel)]="sidebarForm.icon" maxlength="150" placeholder="fa-solid fa-user" />
-    </div>
-    <div class="sidebar-route-field">
-      <label for="sidebarParent">Parent menu</label>
+      <label for="sidebarParent">Parent group</label>
       <select id="sidebarParent" [(ngModel)]="sidebarForm.parentId" [ngModelOptions]="{standalone:true}">
-        <option [ngValue]="null">Dashboard button</option>
+        <option [ngValue]="null">Top level (group heading or standalone page)</option>
         @for (parent of selectableSidebarParents; track parent.id) {
-          <option [ngValue]="parent.id">{{ parent.title }} ({{ parent.route }})</option>
+          <option [ngValue]="parent.id">{{ parent.title }}</option>
         }
       </select>
     </div>
     <div class="sidebar-route-field">
-      <label for="sidebarOrder">Display order</label>
-      <input pInputText id="sidebarOrder" type="number" min="1" [(ngModel)]="sidebarForm.displayOrder" />
+      <label for="sidebarRoute">Angular page route <span class="optional-label">optional for a group</span></label>
+      <input pInputText id="sidebarRoute" [(ngModel)]="sidebarForm.route" (ngModelChange)="onSidebarRouteChange()" maxlength="200" placeholder="Leave blank for a group heading" />
+      <small>Only page items navigate. For example: /cash/in.</small>
     </div>
     <div class="sidebar-route-field">
-      <label for="sidebarRoles">Roles allowed to see this route</label>
-      <select id="sidebarRoles" multiple [(ngModel)]="sidebarForm.roleIds" [ngModelOptions]="{standalone:true}" size="5">
-        @for (role of roles; track role.id) {
-          <option [ngValue]="role.id">{{ role.name }}</option>
-        }
-      </select>
-      @if (loadError) { <small class="role-load-error">{{ loadError }}</small> }
+      <label for="sidebarIcon">Icon</label>
+      <input pInputText id="sidebarIcon" [(ngModel)]="sidebarForm.icon" maxlength="150" placeholder="fa-solid fa-wallet" />
     </div>
+    <div class="sidebar-route-field">
+      <label for="sidebarOrder">Order at this level</label>
+      <input pInputText id="sidebarOrder" type="number" min="1" step="1" [(ngModel)]="sidebarForm.displayOrder" />
+      <small>Sibling items need distinct order numbers. Child pages have their own order.</small>
+      @if (duplicateDisplayOrder) { <small class="field-error">That order is already used at this level.</small> }
+    </div>
+    @if (sidebarForm.route.trim()) {
+      <div class="access-panel">
+        <div class="access-heading"><span class="form-step">Page access</span><p>Select one or more roles and/or individual accounts.</p></div>
+        <section class="access-choice-group" aria-labelledby="sidebarRolesLabel">
+          <label id="sidebarRolesLabel">Roles</label>
+          <div class="access-choice-list">
+            @for (role of roles; track role.id) {
+              <label class="access-choice"><input type="checkbox" [checked]="sidebarForm.roleIds.includes(role.id)" (change)="toggleRole(role.id, $event)" /><span>{{ role.name }}</span></label>
+            }
+            @if (roles.length === 0 && !loading) { <small>No roles available.</small> }
+          </div>
+          @if (loadError) { <small class="role-load-error">{{ loadError }}</small> }
+        </section>
+        <section class="access-choice-group" aria-labelledby="sidebarUsersLabel">
+          <label id="sidebarUsersLabel">Individual users</label>
+          <div class="access-choice-list user-choice-list" [class.is-loading]="sidebarUsersLoading">
+            @for (user of sidebarUsers; track user.id) {
+              <label class="access-choice"><input type="checkbox" [checked]="sidebarForm.userIds.includes(user.id)" (change)="toggleUser(user.id, $event)" [disabled]="sidebarUsersLoading" /><span>{{ user.fullName }} <small>{{ user.email }}</small></span></label>
+            }
+            @if (sidebarUsersLoading) { <small>Loading users...</small> }
+          </div>
+        </section>
+      </div>
+    } @else {
+      <p class="group-access-note"><i class="pi pi-sitemap"></i><span><strong>Group heading</strong><br />It has no route or direct access grants. It appears when someone can access one of its child pages.</span></p>
+    }
     @if (editingSidebarMenu) {
       <label class="sidebar-active-toggle">
         <input type="checkbox" [(ngModel)]="sidebarForm.isActive" />
-        Route is active
+        Item is active
       </label>
     }
   </div>
   <ng-template pTemplate="footer">
     <button pButton type="button" label="Cancel" severity="secondary" (click)="sidebarDialogVisible=false"></button>
-    <button pButton type="button" [label]="editingSidebarMenu ? 'Update Route' : 'Create Route'" icon="pi pi-check" [loading]="sidebarSaving" (click)="saveSidebarMenu()"></button>
+    <button pButton type="button" [label]="editingSidebarMenu ? 'Save changes' : 'Create item'" icon="pi pi-check" [loading]="sidebarSaving" [disabled]="duplicateDisplayOrder" (click)="saveSidebarMenu()"></button>
   </ng-template>
 </p-dialog>

@@ -15,4 +15,5 @@ public class UpdateSidebarMenuDto
     public bool IsActive { get; set; }
 
     public List<int> RoleIds { get; set; } = new();
+    public List<int> UserIds { get; set; } = new();
 }

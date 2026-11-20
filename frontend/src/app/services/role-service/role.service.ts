@@ -18,7 +18,7 @@ export class RoleService {
   {
      return this.http.post<RoleModel>(this.url, { name }); 
   }
-  updateRole(id: number, name: string): Observable<RoleModel>
+  updateRole(id: number, name: string, isActive: boolean): Observable<RoleModel>
   {
      return this.http.put<RoleModel>(`${this.url}/${id}`, { name }); 
   }

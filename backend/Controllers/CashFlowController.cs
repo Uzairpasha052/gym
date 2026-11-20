@@ -26,17 +26,14 @@ public class CashFlowController : ControllerBase
     {
         var result = await _cashService.CashInAsync(dto);
 
-        if (!result)
+        if (!result.Success)
         {
-            return BadRequest(new
-            {
-                message = "Unable to save cash in."
-            });
+            return BadRequest(new { message = result.Message });
         }
 
         return Ok(new
         {
-            message = "Cash in saved successfully."
+            message = result.Message
         });
     }
 

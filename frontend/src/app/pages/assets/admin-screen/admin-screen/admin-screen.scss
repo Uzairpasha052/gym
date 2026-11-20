@@ -1,10 +1,6 @@
 
-.main_container{
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    position: relative;
-}
+.main_container { height: 100dvh; overflow: hidden; }
+:host { display: block; height: 100dvh; }
 
 .sidebar-group { display: grid; gap: 4px; }
 .sidebar-group h2 { margin: 8px 10px 4px; color: #667085; font-size: 11px; text-transform: uppercase; }
@@ -12,10 +8,11 @@
 .sidebar-message.error { color: #b42318; }
 
 .hero_section{
-    position: absolute;
-    // background-color: rgb(214, 216, 216);
-    // padding-bottom: 10px;
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    height: 100%;
+    min-height: 0;
 
     p{
         color: white;
@@ -28,6 +25,7 @@
     justify-content: space-between;
     background-color: white ;
     width: 100%;
+    flex: 0 0 80px;
     height:80px;
     padding: 0 10px;
 }
@@ -62,7 +60,7 @@
         color: white;
         border: none;
         padding: 5px 10px;
-        font-size: 10px;
+        font-size: 13px;
         font-weight: 500;
         border-radius: 6px;
         cursor: pointer;
@@ -89,17 +87,18 @@
 }
 
 .add-user-container{
-    height: 30px;
+    min-height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 
 
     .add-user-btn{
-        width: 80%;
-        font-size: 25px;
-        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        width: auto;
+        padding: 9px 18px;
+        font-size: 16px;
+        font-family: inherit;
         cursor: pointer;
         border-radius: 12px;       
         border: none;
@@ -118,6 +117,30 @@
             text-align: center;
         }
     }
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.user-header {
+  margin-bottom: .25rem;
+}
+
+.user-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.user-header p {
+  margin: .35rem 0 0;
+  color: #667085;
+  line-height: 1.5;
 }
 
 .user_TData{
@@ -175,9 +198,9 @@
 
     display: flex;
     flex-direction: column;
-    padding: 20px 40px;
-    border: 1px solid rgb(171, 171, 171);
-    border-radius: 15px;
+    padding: 18px 0px;
+    // border: 1px solid #d1d5db;
+    border-radius: 12px;
 
     // margin-top: 20px;
     // align-items: center;
@@ -186,7 +209,9 @@
     h2{
         text-align: center;
         margin-bottom: 10px;
-        text-decoration: underline;
+        color: #1f2937;
+        font-size: 1.125rem;
+        font-weight: 600;
     }
     span{   
         font-size: small;
@@ -249,32 +274,53 @@
 // For Layout
 .admin-container{
     display:flex;
-    height:calc(100vh - 80px);
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+
 }
 
 .sidebar{
-    width:200px;
+    flex: 0 0 220px;
+    width:250px;
     // background:#a1a7ad;
     background: #d2d3d3;
     // background: #fff;
     display:flex;
     flex-direction:column;
-    padding:10px 20px;
-    gap: 20px;
+    padding:12px;
+    gap: 4px;
+    overflow-y: auto;
+
+    scrollbar-width: none;
 }
 
 .sidebar button{
-    // margin-bottom:12px;
-    padding:8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 12px;
     border:none;
     background:transparent;
     // color:white;
     color: black;
-    font-size: medium;
+    font-size: 14px;
     cursor:pointer;
-    // text-align:left;
+    text-align: left;
     border-radius:8px;
 }
+
+.sidebar button i,
+.sidebar button iconify-icon { width: 18px; flex: 0 0 18px; text-align: center; font-size: 16px; }
+.sidebar button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-section-label { margin: 8px 10px 4px; color: #667085; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.standalone-label { margin-top: 16px; }
+.sidebar .sidebar-group-button { font-weight: 600; }
+.sidebar .sidebar-group-button > .pi:last-child { width: 12px; flex-basis: 12px; margin-left: auto; font-size: 11px; }
+.sidebar-children { display: grid; gap: 3px; margin: 0 0 6px 12px; padding-left: 8px; border-left: 1px solid #b8bec5; }
+.sidebar-children button { min-height: 38px; padding: 7px 9px; font-size: 13px; }
 
 .sidebar button:hover{
     background:#6a96bf;
@@ -286,9 +332,34 @@
 
 .content{
     flex:1;
-    overflow:auto;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
     padding:20px;
     background:#eceff1;
+
+    scrollbar-width: none;
+}
+
+@media (max-width: 760px) {
+    .sidebar { flex-basis: 180px; width: 180px; padding: 10px 8px; }
+    .sidebar button { font-size: 13px; text-align: left; }
+    .content { padding: 14px; }
+    .hero_img_3 img { display: none; }
+}
+
+@media (max-width: 520px) {
+    .sidebar { flex-basis: 132px; width: 132px; }
+    .sidebar button { padding: 8px 5px; font-size: 12px; }
+    .hero_img_1 img { width: 112px; object-fit: contain; }
+    .hero_img_3 button { padding: 6px 8px; }
+}
+
+@media (max-width: 700px) {
+    .user_pdata { padding: 14px; }
+    .chart-container { flex-direction: column; }
+    .chart-input, .chart-card { width: 100%; }
 }
 
 

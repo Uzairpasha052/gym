@@ -7,7 +7,7 @@ namespace backend.Interfaces;
 
 public interface ICashService
 {
-    Task<bool> CashInAsync(CashInDto dto);
+    Task<CashInResponseDto> CashInAsync(CashInDto dto);
 
     Task<PagedResult<CashInListDto>> GetAllCashInAsync(PaginationRequest request, 
         int? year = null, int? month = null);

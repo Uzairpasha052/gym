@@ -24,16 +24,34 @@ public class CashService : ICashService
         _logService = logService;
     }
 
-    public async Task<bool> CashInAsync(CashInDto dto)
+    public async Task<CashInResponseDto> CashInAsync(CashInDto dto)
     {
         var player = await _repository.GetPlayerByIdAsync(dto.PlayerId);
-        if (dto.Amount <= 0 || player is null) return false;
+        if (player is null)
+            return new CashInResponseDto { Success = false, Message = "Player not found." };
+
+        if (dto.Amount <= 0)
+            return new CashInResponseDto { Success = false, Message = "Amount must be greater than zero." };
 
         var paymentDate = dto.PaymentDate == default ? DateTime.UtcNow : dto.PaymentDate;
-        var coverageStart = DateOnly.FromDateTime(paymentDate);
+        var today = DateOnly.FromDateTime(DateTime.Today);
         var latestCoverageEnd = await _repository.GetLatestCoverageEndAsync(dto.PlayerId);
-        if (latestCoverageEnd.HasValue && latestCoverageEnd.Value >= coverageStart)
-            coverageStart = latestCoverageEnd.Value.AddDays(1);
+
+        // Allow renewal during the last 7 days of the current coverage period.
+        // This check uses today's date rather than the client-supplied payment date
+        // so a backdated or future-dated request cannot bypass the renewal window.
+        if (latestCoverageEnd.HasValue && latestCoverageEnd.Value > today.AddDays(7))
+        {
+            return new CashInResponseDto
+            {
+                Success = false,
+                Message = $"This player has already paid. Another cash-in is allowed starting {latestCoverageEnd.Value.AddDays(-7):dd MMM yyyy}."
+            };
+        }
+
+        var coverageStart = latestCoverageEnd.HasValue && latestCoverageEnd.Value >= today
+            ? latestCoverageEnd.Value.AddDays(1)
+            : today;
 
         var cashIn = new CashIn
         {
@@ -67,7 +85,7 @@ public class CashService : ICashService
             newValues
         );
 
-        return true;
+        return new CashInResponseDto { Success = true, Message = "Cash in saved successfully." };
     }
 
     public async Task<bool> CashOutAsync(CashOutDto dto)

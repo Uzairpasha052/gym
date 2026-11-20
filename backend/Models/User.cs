@@ -16,6 +16,7 @@ public class User
     public Role Role { get; set; } = null!;
     public int? PlayerId { get; set; }
     public Player? Player { get; set; }
+    public ICollection<UserSidebarMenu> SidebarMenuAssignments { get; set; } = new List<UserSidebarMenu>();
     //public string Role { get; set; } = string.Empty; 
     // Admin, HR, Employee
 

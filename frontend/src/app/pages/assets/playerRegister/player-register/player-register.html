@@ -1,11 +1,29 @@
 
+<header class="user-header">
+
+<div>
+    <h2>Member Control</h2>
+    <p>Manage Members for the Gym.</p>
+</div>
+
+<button pButton type="button" label="Add Member" icon="pi pi-user-plus"
+    (click)="openRegister()">
+</button>
+@if(showRegister)
+{
+    <app-player-register-pop-up
+        (close)="closeRegister()">
+    </app-player-register-pop-up>
+}
+
+</header>
 
 
 <!-- Register User -->
-<div class="add-user-container">
+<!-- <div class="add-user-container">
     <button (click)="openRegister()" class="add-user-btn">
         <iconify-icon icon="mdi:account-plus-outline" class="register_logo"></iconify-icon>
-        Add Player
+        Add Member
     </button>
     @if(showRegister)
     {
@@ -13,11 +31,11 @@
             (close)="closeRegister()">
         </app-player-register-pop-up>
     }
-</div> 
+</div>  -->
 
 <!-- display User -->
 <div class="user_pdata">
-    <h2>Players List</h2>
+    <!-- <h2>Members List</h2> -->
     <p-confirmDialog></p-confirmDialog>
     <p-table
         #dt
@@ -32,6 +50,8 @@
         [tableStyle]="{'min-width':'60rem'}">
 
         <ng-template pTemplate="caption">
+            <h2>Members List</h2>
+            
             <p-iconfield>
                 <p-inputicon class="pi pi-search"></p-inputicon>
 

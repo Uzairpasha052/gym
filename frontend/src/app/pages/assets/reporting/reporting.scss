@@ -17,15 +17,15 @@
     --text-muted: #5B5546;
 
     display: block;
-    // background: var(--paper);
-    font-family: 'Source Serif 4', Georgia, serif;
-    color: var(--ink);
+    font-family: inherit;
+    color: #1f2937;
 }
 
 .reports-container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 2.5rem 0rem 0rem;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
 }
 
 
@@ -59,8 +59,8 @@
 // }
 
 .masthead h2 {
-    font-size: 2.2rem;
-    font-weight: 700;
+    font-size: 1.5rem;
+    font-weight: 600;
     margin: 0;
     letter-spacing: -.01em;
 }
@@ -117,21 +117,21 @@
 
 .report-card {
     display: block;
-    border-bottom: 1px solid var(--hair);
-    padding: 2rem 0.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 2px 2px 2px 2px rgb(147, 128, 128);
-    background: linear-gradient(to right,  white, rgb(225, 223, 223)) ;
-
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: none;
+    background: #fff;
+    transition: none;
 
     &:last-child {
         border-bottom: none;
     }
 
     &:hover{
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 4px 6px 12px rgba(0, 0, 0, 0.25);
+        transform: none;
+        box-shadow: none;
 
 
     }
@@ -161,16 +161,16 @@
     justify-content: center;
     text-align: center;
     width: 82px;
-    height: 82px;
-    border: 1.5px solid var(--rust);
-    border-radius: 50%;
-    transform: rotate(-8deg);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: .64rem;
+    min-height: 48px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    transform: none;
+    font-family: inherit;
+    font-size: .75rem;
     font-weight: 600;
     letter-spacing: .08em;
     text-transform: uppercase;
-    color: var(--rust);
+    color: #475467;
     line-height: 1.25;
     padding: .3rem;
 }
@@ -278,30 +278,7 @@
     }
 
     // Buttons — outlined ink, fills on hover
-    .p-button {
-        background: transparent;
-        border: 1.5px solid var(--ink);
-        color: var(--ink);
-        border-radius: 2rem;
-        padding: .62rem 1.2rem;
-        font-family: 'Inter', sans-serif;
-        font-weight: 600;
-        font-size: .82rem;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        box-shadow: none;
-        transition: background .15s ease, color .15s ease;
-
-        &:hover {
-            background: var(--ink);
-            color: var(--paper);
-            border-color: var(--ink);
-        }
-
-        .p-button-icon {
-            font-size: .8rem;
-        }
-    }
+    .reports-container .p-button { font-family: inherit; font-size: .875rem; letter-spacing: normal; text-transform: none; }
 }
 
 
